@@ -1,0 +1,3 @@
+#!/usr/bin/env ruby
+
+require "ass_maintainer/info_base"
