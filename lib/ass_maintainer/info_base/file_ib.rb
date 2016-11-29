@@ -13,7 +13,7 @@ module AssMaintainer
       end
 
       def maker
-        options[:maker] || DefaultMaker.new
+        options[:maker] || InfoBase::DefaultMaker.new
       end
       private :maker
 
@@ -21,6 +21,10 @@ module AssMaintainer
         options[:destroyer] || FileBaseDestroyer.new
       end
       private :destroyer
+
+      def make_connection_string
+        connection_string
+      end
     end
   end
 end

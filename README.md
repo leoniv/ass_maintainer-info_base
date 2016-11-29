@@ -1,8 +1,11 @@
 # AssMaintainer::InfoBase
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/ass_maintainer/info_base`. To experiment with that code, run `bin/console` for an interactive prompt.
 
-TODO: Delete this and the text above, and describe your gem
+Gem provides features for manipulate with 1C:Enterprise applications as easy
+as possible.
+
+Main thing of this gem `class AssMaintainer::InfoBase` provides
+some methods for manipulate with information base;
 
 ## Installation
 
