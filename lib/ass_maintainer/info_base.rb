@@ -1,4 +1,5 @@
 require 'ass_maintainer/info_base/version'
+require 'ass_launcher'
 
 module AssMaintainer
   class InfoBase
@@ -28,28 +29,44 @@ module AssMaintainer
     class Cfg < AbstractCfg
       # Dump configuration to +XML+ files
       # @param path [String]
+      # @return [String] path
       def dump_xml(path)
-        fail 'FIXME'
+        infobase.designer do
+          dumpConfigToFiles path
+        end.run.wait.result.verify!
+        path
       end
 
       # Dump configuration to +.cf+ file
       # @param path [String]
+      # @return [String] path
       def dump(path)
-        fail 'FIXME'
+        infobase.designer do
+          dumpCfg path
+        end.run.wait.result.verify!
+        path
       end
 
       # Load configuration from +XML+ files
       # @param path [String]
+      # @return [String] path
       def load_xml(path)
         fail MethodDenied, :load_xml if infobase.read_only?
-        fail 'FIXME'
+        infobase.designer do
+          loadConfigFromFiles path
+        end.run.wait.result.verify!
+        path
       end
 
       # Load configuration from +.cf+ file
       # @param path [String]
+      # @return [String] path
       def load(path)
         fail MethodDenied, :load_cf if infobase.read_only?
-        fail 'FIXME'
+        infobase.designer do
+          loadCfg path
+        end.run.wait.result.verify!
+        path
       end
     end
 
@@ -59,13 +76,21 @@ module AssMaintainer
       # configuration
       def update
         fail MethodDenied, :update if infobase.read_only?
-        fail 'FIXME'
+        infobase.designer do
+          updateDBCfg do
+            warningsAsErrors
+          end
+        end.run.wait.result.verify!
       end
 
       # Dump configuration to +.cf+ file
       # @param path [String]
+      # @return [String] path
       def dump(path)
-        fail 'FIXME'
+        infobase.designer do
+          dumpDBCfg path
+        end.run.wait.result.verify!
+        path
       end
     end
 
@@ -73,44 +98,69 @@ module AssMaintainer
       include Interfaces::IbMaker
       def entry_point
         cs = infobase.make_connection_string
-        cmd = infobase.thick.command(:createinfobase) do
-          connection_string cs
-          _L 'en'
-        end
-        cmd.run.wait.result.verify!
+        infobase.thick
+          .command(:createinfobase,
+                   infobase.connection_string.createinfobase_args +
+                   infobase.common_args)
+          .run.wait.result.verify!
       end
     end
+
+    HOOKS = {
+      before_make: ->(ib){},
+      after_make: ->(ib){},
+      before_rm: ->(ib){},
+      after_rm: ->(ib){},
+    }
 
     OPTIONS = {
       maker: nil,
       destroyer: nil,
       platform_require: config.platform_require,
-      before_make: ->(ib){},
-      after_make: ->(ib){},
-      before_rm: ->(ib){},
-      after_rm: ->(ib){}
+      locale: nil
     }
 
-    OPTIONS.each_key do |key|
+    ALL_OPTIONS = OPTIONS.merge HOOKS
+
+    ALL_OPTIONS.each_key do |key|
       next if key == :maker || key == :destroyer
       define_method key do
         options[key]
       end
+
+      next if HOOKS.keys.include? key
+      define_method "#{key}=".to_sym do |arg|
+        options[key] = arg
+      end
     end
 
-    attr_reader :name, :connection_string, :options, :read_only?
+
+    attr_reader :name, :connection_string, :options
     def initialize(name, connection_string, read_only = true, **options)
       @name = name
       @connection_string = self.class.cs(connection_string.to_s)
       @read_only = read_only
-      @options = OPTIONS.merge(options)
-      if connection_string.is? :file
+      @options = ALL_OPTIONS.merge(options)
+      if self.connection_string.is? :file
         extend FileIb
-      elsif connection_string.is? :server
+      elsif self.onnection_string.is? :server
         extend ServerIb
       else
         fail ArgumentError
       end
+    end
+
+    def add_hook(hook, &block)
+      fail ArgumentError, "Invalid hook `#{hook}'" unless\
+        HOOKS.keys.include? hook
+      fail ArgumentError, 'Block require' unless block_given?
+      options[hook] = block
+    end
+
+    # InfoBase is read only
+    # destructive methods will be fail with {MethodDenied} error
+    def read_only?
+      @read_only
     end
 
     # Rebuild infobse first call {#rm!} second call {#make}
@@ -151,7 +201,7 @@ module AssMaintainer
     # @raise [MethodDenied] if infobase {read_only?}
     def rm_infobase!
       fail MethodDenied, :rm_infobase! if read_only?
-      befor_rm.call(self)
+      before_rm.call(self)
       destroyer.execute(self)
       after_rm.call(self)
     end
@@ -192,30 +242,60 @@ module AssMaintainer
     end
 
     # @return [AssLauncher::Enterprise::BinaryWrapper::ThickClient]
-    def thick_client
-      self.class.thickis(platform_require).last ||\
+    def thick
+      self.class.thicks(platform_require).last ||\
         fail("Platform 1C #{platform_require} not found")
     end
 
     # @return [AssLauncher::Enterprise::BinaryWrapper::ThinClient]
-    def thin_client
-      self.class.thin(platform_require).last ||\
+    def thin
+      self.class.thins(platform_require).last ||\
         fail("Platform 1C #{platform_require} not found")
+    end
+
+    # @return [AssLauncher::Enterprise::Ole::IbConnection]
+    def external
+      conn = self.class.ole(:external, ole_requirement)
+    end
+
+    def ole_requirement
+      "= #{thick.version}"
+    end
+    private :ole_requirement
+
+    def try_connect
+      cs = self.class.cs(connection_string.to_s)
+      cs.locale = 'en'
+      ex = external
+      begin
+        ex.__open__ cs
+      ensure
+        ex.__close__
+      end
     end
 
     def fail_if_not_exists
       fail 'Infobase not exists' unless exists?
     end
+    private :fail_if_not_exists
+
+    def designer(&block)
+      thick.command(:designer, connection_string.to_args + common_args, &block)
+    end
+
+    def common_args
+      r = []
+      r += ['/L', locale] if locale
+      r
+    end
 
     # Dump infobase to +.dt+ file
     def dump(path)
       fail_if_not_exists
-      cs = connection_string
-      cmd = thick.command(:designer) do
-        connection_string cs
+      designer do
         dumpIB path
-      end
-      cmd.run.wait.result.verify!
+      end.run.wait.result.verify!
+      path
     end
 
     # Restore infobase from +.dt+ file
@@ -223,7 +303,10 @@ module AssMaintainer
     def restore!(path)
       fail MethodDenied, :restore! if read_only?
       fail_if_not_exists
-      fail 'FIXME'
+      designer do
+        restoreIB path
+      end.run.wait.result.verify!
+      path
     end
 
     # Returns instance for manipuate with
