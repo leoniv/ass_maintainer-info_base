@@ -5,7 +5,7 @@ module AssMaintainer
       class ServerBaseDestroyer
         include Interfaces::IbDestroyer
         def entry_point
-          fail NotImplementsError
+          fail NotImplementedError
         end
       end
 
@@ -15,7 +15,7 @@ module AssMaintainer
       private :maker
 
       def exists?
-        fail NotImplementsError
+        fail NotImplementedError
       end
 
       def distroer

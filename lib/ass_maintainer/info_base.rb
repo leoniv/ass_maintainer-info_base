@@ -134,7 +134,6 @@ module AssMaintainer
       end
     end
 
-
     attr_reader :name, :connection_string, :options
     def initialize(name, connection_string, read_only = true, **options)
       @name = name
@@ -143,7 +142,7 @@ module AssMaintainer
       @options = ALL_OPTIONS.merge(options)
       if self.connection_string.is? :file
         extend FileIb
-      elsif self.onnection_string.is? :server
+      elsif self.connection_string.is? :server
         extend ServerIb
       else
         fail ArgumentError
@@ -279,10 +278,33 @@ module AssMaintainer
     end
     private :fail_if_not_exists
 
+    # Build command for run designer
+    # block will be passed to arguments builder
+    # @return [AssLauncher::Support::Shell::Command]
     def designer(&block)
+      fail_if_not_exists
       thick.command(:designer, connection_string.to_args + common_args, &block)
     end
 
+    # Build command for run enterprise
+    # block will be passed to arguments builder
+    # @param client [Symbol] +:thin+ or +thick+ client
+    # @return [AssLauncher::Support::Shell::Command]
+    def enterprise(client, &block)
+      fail_if_not_exists
+      case client
+      when :thin then
+        thin.command(connection_string.to_args + common_args, &block)
+      when :thick then
+        thick.command(:enterprise,
+                      connection_string.to_args + common_args,
+                      &block)
+      else
+        fail ArgumentError, "Invalid clent #{client}"
+      end
+    end
+
+    # Common arguments for all commands
     def common_args
       r = []
       r += ['/L', locale] if locale
@@ -291,7 +313,6 @@ module AssMaintainer
 
     # Dump infobase to +.dt+ file
     def dump(path)
-      fail_if_not_exists
       designer do
         dumpIB path
       end.run.wait.result.verify!
@@ -302,7 +323,6 @@ module AssMaintainer
     # @raise [MethodDenied] if {#read_only?}
     def restore!(path)
       fail MethodDenied, :restore! if read_only?
-      fail_if_not_exists
       designer do
         restoreIB path
       end.run.wait.result.verify!
@@ -328,39 +348,39 @@ module AssMaintainer
     # Returns array of infobase sessions
     # @return [Array <Session>]
     def sessions
-      fail NotImplementsError
+      fail NotImplementedError
     end
 
     # Lock infobase. It work for server infobase only.
     # For file infobase it do nothing
     def lock
-      fail NotImplementsError
+      fail NotImplementedError
     end
 
     # Unlock infobase which {#locked_we?}.
     # It work for server infobase only.
     # For file infobase it do nothing
     def unlock
-      fail NotImplementsError
+      fail NotImplementedError
     end
 
     # Unlock infobase.
     # It work for server infobase only.
     # For file infobase it do nothing
     def unlock!(uc)
-      fail NotImplementsError
+      fail NotImplementedError
     end
 
     # Lock infobase. It work for server infobase only.
     # For file infobase it return false
     def locked?
-      fail NotImplementsError
+      fail NotImplementedError
     end
 
     # True if infobase locked this
     # For file infobase it return false
     def locked_we?
-      fail NotImplementsError
+      fail NotImplementedError
     end
   end
 end
