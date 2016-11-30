@@ -35,6 +35,7 @@ module AssMaintainer
         # {ServerIb::InfoBaseWrapper} classes
         module InfoBaseWrapper
           # Returns array of infobase sessions
+          # For file infobase returns empty array
           # @return [Array <Session>]
           def sessions
             fail NotImplementedError

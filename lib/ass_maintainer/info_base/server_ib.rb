@@ -14,6 +14,7 @@ module AssMaintainer
       end
       private :maker
 
+      # True if infobase exists
       def exists?
         infobase_wrapper.exists?
       end
@@ -38,7 +39,7 @@ module AssMaintainer
       end
       private :def_server_agent
 
-      # @param [EnterpriseServers::ServerAgent]
+      # @param a [EnterpriseServers::ServerAgent]
       def server_agent=(a)
         fail ArgumentError unless a.instance_of? ServerAgent
         @server_agent = a

@@ -40,29 +40,29 @@ module AssMaintainer
           self.infobase = infobase
         end
 
-        # (see Interfaces::InfoBaseWrapper)
+        # (see Interfaces::InfoBaseWrapper#sessions)
         def sessions
           []
         end
 
-        # (see Interfaces::InfoBaseWrapper)
+        # (see Interfaces::InfoBaseWrapper#lock)
         def lock
         end
 
-        # (see Interfaces::InfoBaseWrapper)
+        # (see Interfaces::InfoBaseWrapper#unlock)
         def unlock
         end
 
-        # (see Interfaces::InfoBaseWrapper)
+        # (see Interfaces::InfoBaseWrapper#unlock!)
         def unlock!
         end
 
-        # (see Interfaces::InfoBaseWrapper)
+        # (see Interfaces::InfoBaseWrapper#locked?)
         def locked?
           false
         end
 
-        # (see Interfaces::InfoBaseWrapper)
+        # (see Interfaces::InfoBaseWrapper#locked_we?)
         def locked_we?
           false
         end

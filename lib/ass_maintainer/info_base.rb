@@ -2,6 +2,21 @@ require 'ass_maintainer/info_base/version'
 require 'ass_launcher'
 
 module AssMaintainer
+  # Class for manipulate with 1C:Enterprise application instance aka
+  # +information base+ or +infobase+
+  #
+  # Instances of this class have dinamicly generated interfaece
+  #
+  # 1C:Enterprise application may be deployed as file (aka file infobase) or
+  # on a 1C:Enterprise server (aka server infobase). In the {#initialize}
+  # instance of this class will be extended suitable module:
+  # - server infobase instance will be extend module {ServerIb}
+  # - file infobase instance will be exten module {FileIb}
+  #
+  # Both instance type inherits methods from {Interfaces::InfoBaseWrapper}
+  #
+  # All instances get methods wrappers for access to {#options} see
+  # {.build_options_wrapper}
   class InfoBase
     extend AssLauncher::Api
     require 'ass_maintainer/info_base/config'
@@ -19,7 +34,7 @@ module AssMaintainer
     # @abstract
     class AbstractCfg
       attr_reader :infobase
-      # @param [InfoBase]
+      # @param infobase [InfoBase]
       def initialize(infobase)
         @infobase = infobase
       end
@@ -94,8 +109,10 @@ module AssMaintainer
       end
     end
 
+    # Default infobase maker
     class DefaultMaker
       include Interfaces::IbMaker
+      # :hodoc:
       def entry_point
         cs = infobase.make_connection_string
         infobase.thick
@@ -106,8 +123,11 @@ module AssMaintainer
       end
     end
 
+    # Deafult port for connect to 1C:Enterprise serever agent
     DEFAULT_SAGENT_PORT = '1540'
 
+    # Hooks before and after make and remove infobase. Hooks may be passed as
+    # options or seted later see {#add_hook}
     HOOKS = {
       before_make: ->(ib){},
       after_make: ->(ib){},
@@ -115,11 +135,26 @@ module AssMaintainer
       after_rm: ->(ib){},
     }
 
+    # On default for make and remove infobase uses {DefaultMaker} and
+    # {FileIb::FileBaseDestroyer} or {ServerIb::ServerBaseDestroyer}
+    # but we can pass custom maker and destroyer as {#options}.
+    # Maker and destroyer must implements {Interfaces::IbMaker} and
+    # {Interfaces::IbDestroyer}
     WORKERS = {
       maker: nil,
       destroyer: nil
     }
 
+    # - +:latform_require+ Required 1C:Enterprise version
+    # - +:agent_host+ Host name of 1C:Enterprise server agent
+    # - +:agent_port+ TCP port of 1C:Enterprise server agent on
+    #   default {DEFAULT_SAGENT_PORT}
+    # - +:agent_usr+ Admin for 1C:Enterprise server agent
+    # - +:agent_pwd+ Admin password for 1C:Enterprise server agent
+    # - +:laster_usr+ Admin for 1C:Enterprise claster. See {ServerIb#claster_usr}
+    # - +:laster_pwd+ Pasword Admin for 1C:Enterprise claster.
+    #   See {ServerIb#claster_pwd}
+    # - +:nlock_code+ Code for connect to locked infobase aka "/UC" parameter
     ARGUMENTS = {
       platform_require: config.platform_require,
       sagent_host: nil,
@@ -133,19 +168,34 @@ module AssMaintainer
 
     OPTIONS = (ARGUMENTS.merge HOOKS).merge WORKERS
 
-    OPTIONS.each_key do |key|
-      next if WORKERS.keys.include? key
-      define_method key do
-        options[key]
-      end
+    # Dinamicaly builds of options wrappers
+    def self.build_options_wrapper
+      OPTIONS.each_key do |key|
+        next if WORKERS.keys.include? key
+        define_method key do
+          options[key]
+        end
 
-      next if HOOKS.keys.include? key
-      define_method "#{key}=".to_sym do |arg|
-        options[key] = arg
+        next if HOOKS.keys.include? key
+        define_method "#{key}=".to_sym do |arg|
+          options[key] = arg
+        end
       end
     end
 
-    attr_reader :name, :connection_string, :options
+    build_options_wrapper
+
+    # see {#initialize} +name+
+    attr_reader :name
+    # see {#initialize} +connection_string+
+    attr_reader :connection_string
+    # see {#initialize} +options+
+    attr_reader :options
+
+    # @param name [String] name of infobase
+    # @param connection_string [String AssLauncher::Support::ConnectionString]
+    # @param read_only [true false] infobse is read only or not
+    # @param options [Hash] see {OPTIONS}
     def initialize(name, connection_string, read_only = true, **options)
       @name = name
       @connection_string = self.class.cs(connection_string.to_s)
@@ -161,6 +211,9 @@ module AssMaintainer
       yield self if block_given?
     end
 
+    # Add hook. In all hook whill be passed +self+
+    # @raise [ArgumentError] if invalid hook name or not block given
+    # @param hook [Symbol] hook name
     def add_hook(hook, &block)
       fail ArgumentError, "Invalid hook `#{hook}'" unless\
         HOOKS.keys.include? hook
@@ -189,7 +242,7 @@ module AssMaintainer
 
     # Make new empty infobase
     # wrpped in +before_make+ and +after_make+ hooks
-    # @raise [MethodDenied] if infobase {read_only?}
+    # @raise [MethodDenied] if infobase {#read_only?}
     def make_infobase!
       fail MethodDenied, :make_infobase! if read_only?
       before_make.call(self)
@@ -209,7 +262,7 @@ module AssMaintainer
 
     # Remove infobase
     # wrpped in +before_rm+ and +after_rm+ hooks
-    # @raise [MethodDenied] if infobase {read_only?}
+    # @raise [MethodDenied] if infobase {#read_only?}
     def rm_infobase!
       fail MethodDenied, :rm_infobase! if read_only?
       before_rm.call(self)
@@ -277,7 +330,7 @@ module AssMaintainer
     end
 
     # Get ole connector specified in +type+ parameter
-    # @param type [Symbol] see {AssLauncher::Api#ole}
+    # @param type [Symbol] see +AssLauncher::Api#ole+
     def ole(type)
       conn = self.class.ole(type, ole_requirement)
     end
