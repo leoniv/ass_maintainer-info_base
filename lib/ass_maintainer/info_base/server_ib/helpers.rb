@@ -2,6 +2,7 @@ module AssMaintainer
   class InfoBase
     module ServerIb
       module EnterpriseServers
+        # Mixins for serever connection describers {Claster} {ServerAgent}
         module ServerConnection
           attr_reader :host_port, :user, :password
           def initialize(host_port, user, password)
@@ -32,12 +33,14 @@ module AssMaintainer
       class InfoBaseWrapper
         include Interfaces::InfoBaseWrapper
         attr_accessor :infobase, :server_agent, :claster
+        # @api private
         def initialize(infobase, server_agent, claster)
           self.infobase = infobase
           self.server_agent = server_agent
           self.claster = claster
         end
 
+        # True if infobase exists
         def exists?
           fail NotImplementedError
         end

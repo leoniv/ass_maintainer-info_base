@@ -1,7 +1,9 @@
 module AssMaintainer
   class InfoBase
+    # Mixins for infobase deployed on 1C:Eneterprise server
     module ServerIb
       require 'ass_maintainer/info_base/server_ib/helpers'
+      # Defauld destroyer for serever infobase
       class ServerBaseDestroyer
         include Interfaces::IbDestroyer
         def entry_point
@@ -34,8 +36,8 @@ module AssMaintainer
         host = sagent_host || connection_string.servers[0].host
         port = sagent_port || InfoBase::DEFAULT_SAGENT_PORT
         EnterpriseServers::ServerAgent.new("#{host}:#{port}",
-                                         sagent_usr,
-                                         sagent_pwd)
+                                           sagent_usr,
+                                           sagent_pwd)
       end
       private :def_server_agent
 
@@ -53,7 +55,7 @@ module AssMaintainer
 
       # Claster user name
       def claster_usr
-        connection_string.susr || (claster_usr = options[:claster_usr])
+        connection_string.susr || (self.claster_usr = options[:claster_usr])
       end
 
       # Set claster user password
@@ -64,7 +66,7 @@ module AssMaintainer
 
       # Claster user password
       def claster_pwd
-        connection_string.spwd || (claster_pwd = options[:claster_pwd])
+        connection_string.spwd || (self.claster_pwd = options[:claster_pwd])
       end
 
       # @return [EnrepriseServers::Claster]
@@ -73,7 +75,7 @@ module AssMaintainer
       end
 
       def filled?(fields)
-        files.each do |f|
+        fields.each do |f|
           return false if connection_string[f].nil?
         end
         true
@@ -87,6 +89,7 @@ module AssMaintainer
         AssLauncher::Support::ConnectionString.new(connection_string.to_s)
       end
 
+      # @return {InfoBaseWrapper}
       def infobase_wrapper
         @infobase_wrapper = InfoBaseWrapper.new(self, server_agent, claster)
       end

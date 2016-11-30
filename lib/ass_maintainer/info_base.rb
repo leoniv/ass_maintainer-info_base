@@ -2,6 +2,8 @@ require 'ass_maintainer/info_base/version'
 require 'ass_launcher'
 
 module AssMaintainer
+  # rubocop:disable Metrics/ClassLength
+
   # Class for manipulate with 1C:Enterprise application instance aka
   # +information base+ or +infobase+
   #
@@ -114,7 +116,6 @@ module AssMaintainer
       include Interfaces::IbMaker
       # :hodoc:
       def entry_point
-        cs = infobase.make_connection_string
         infobase.thick
           .command(:createinfobase,
                    infobase.connection_string.createinfobase_args +
@@ -129,10 +130,10 @@ module AssMaintainer
     # Hooks before and after make and remove infobase. Hooks may be passed as
     # options or seted later see {#add_hook}
     HOOKS = {
-      before_make: ->(ib){},
-      after_make: ->(ib){},
-      before_rm: ->(ib){},
-      after_rm: ->(ib){},
+      before_make: ->(ib) {},
+      after_make: ->(ib) {},
+      before_rm: ->(ib) {},
+      after_rm: ->(ib) {}
     }
 
     # On default for make and remove infobase uses {DefaultMaker} and
@@ -151,19 +152,20 @@ module AssMaintainer
     #   default {DEFAULT_SAGENT_PORT}
     # - +:agent_usr+ Admin for 1C:Enterprise server agent
     # - +:agent_pwd+ Admin password for 1C:Enterprise server agent
-    # - +:laster_usr+ Admin for 1C:Enterprise claster. See {ServerIb#claster_usr}
+    # - +:laster_usr+ Admin for 1C:Enterprise claster.
+    #   See {ServerIb#claster_usr}
     # - +:laster_pwd+ Pasword Admin for 1C:Enterprise claster.
     #   See {ServerIb#claster_pwd}
     # - +:nlock_code+ Code for connect to locked infobase aka "/UC" parameter
     ARGUMENTS = {
-      platform_require: config.platform_require,
+      platform_require: nil,
       sagent_host: nil,
       sagent_port: nil,
       sagent_usr: nil,
       sagent_pwd: nil,
       claster_usr: nil,
       claster_pwd: nil,
-      unlock_code: nil,
+      unlock_code: nil
     }
 
     OPTIONS = (ARGUMENTS.merge HOOKS).merge WORKERS
@@ -191,6 +193,10 @@ module AssMaintainer
     attr_reader :connection_string
     # see {#initialize} +options+
     attr_reader :options
+    # InfoBase is read only
+    # destructive methods will be fail with {MethodDenied} error
+    attr_reader :read_only
+    alias_method :read_only?, :read_only
 
     # @param name [String] name of infobase
     # @param connection_string [String AssLauncher::Support::ConnectionString]
@@ -201,12 +207,10 @@ module AssMaintainer
       @connection_string = self.class.cs(connection_string.to_s)
       @read_only = read_only
       @options = OPTIONS.merge(options)
-      if self.connection_string.is? :file
-        extend FileIb
-      elsif self.connection_string.is? :server
-        extend ServerIb
-      else
-        fail ArgumentError
+      case self.connection_string.is
+      when :file then extend FileIb
+      when :server then extend ServerIb
+      else fail ArgumentError
       end
       yield self if block_given?
     end
@@ -221,10 +225,10 @@ module AssMaintainer
       options[hook] = block
     end
 
-    # InfoBase is read only
-    # destructive methods will be fail with {MethodDenied} error
-    def read_only?
-      @read_only
+    # Requrement 1C version
+    # @return [String]
+    def platform_require
+      options[:platform_require] || self.class.config.platform_require
     end
 
     # Rebuild infobse first call {#rm!} second call {#make}
@@ -319,20 +323,20 @@ module AssMaintainer
 
     # @return [AssLauncher::Enterprise::BinaryWrapper::ThickClient]
     def thick
-      self.class.thicks(platform_require).last ||\
+      self.class.thicks(platform_require).last ||
         fail("Platform 1C #{platform_require} not found")
     end
 
     # @return [AssLauncher::Enterprise::BinaryWrapper::ThinClient]
     def thin
-      self.class.thins(platform_require).last ||\
+      self.class.thins(platform_require).last ||
         fail("Platform 1C #{platform_require} not found")
     end
 
     # Get ole connector specified in +type+ parameter
     # @param type [Symbol] see +AssLauncher::Api#ole+
     def ole(type)
-      conn = self.class.ole(type, ole_requirement)
+      self.class.ole(type, ole_requirement)
     end
 
     def ole_requirement
@@ -363,8 +367,7 @@ module AssMaintainer
       when :thin then
         thin.command(connection_string.to_args + common_args, &block)
       when :thick then
-        thick.command(:enterprise,
-                      connection_string.to_args + common_args,
+        thick.command(:enterprise, connection_string.to_args + common_args,
                       &block)
       else
         fail ArgumentError, "Invalid clent #{client}"
@@ -415,6 +418,7 @@ module AssMaintainer
 
     extend Forwardable
     def_delegators :infobase_wrapper,
-      *Interfaces::InfoBaseWrapper.instance_methods
+                   *Interfaces::InfoBaseWrapper.instance_methods
   end
+  # rubocop:enable Metrics/ClassLength
 end

@@ -1,6 +1,8 @@
 module AssMaintainer
   class InfoBase
+    # Mixins for file deployed infobase
     module FileIb
+      # Default destroyer for file infobase
       class FileBaseDestroyer
         include Interfaces::IbDestroyer
         def entry_point
@@ -8,6 +10,7 @@ module AssMaintainer
         end
       end
 
+      # True if infobase exists
       def exists?
         File.file?("#{connection_string.path}/1Cv8.1CD")
       end
@@ -33,6 +36,7 @@ module AssMaintainer
         @infobase_wrapper = InfoBaseWrapper.new(self)
       end
 
+      # (see Interfaces::InfoBaseWrapper)
       class InfoBaseWrapper
         include Interfaces::InfoBaseWrapper
         attr_accessor :infobase

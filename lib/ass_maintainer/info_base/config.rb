@@ -1,4 +1,5 @@
 module AssMaintainer
+  #
   class InfoBase
     ASS_PLATFORM_REQUIRE = ENV['ASS_PLATFORM_REQUIRE'] || '> 0'
 
