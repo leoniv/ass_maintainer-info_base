@@ -22,8 +22,50 @@ module AssMaintainer
       end
       private :destroyer
 
+      # Connection string fore createinfobase
       def make_connection_string
         connection_string
+      end
+
+      # Dummy infobase wrupper
+      # @return [InfoBaseWrapper]
+      def infobase_wrapper
+        @infobase_wrapper = InfoBaseWrapper.new(self)
+      end
+
+      class InfoBaseWrapper
+        include Interfaces::InfoBaseWrapper
+        attr_accessor :infobase
+        def initialize(infobase)
+          self.infobase = infobase
+        end
+
+        # (see Interfaces::InfoBaseWrapper)
+        def sessions
+          []
+        end
+
+        # (see Interfaces::InfoBaseWrapper)
+        def lock
+        end
+
+        # (see Interfaces::InfoBaseWrapper)
+        def unlock
+        end
+
+        # (see Interfaces::InfoBaseWrapper)
+        def unlock!
+        end
+
+        # (see Interfaces::InfoBaseWrapper)
+        def locked?
+          false
+        end
+
+        # (see Interfaces::InfoBaseWrapper)
+        def locked_we?
+          false
+        end
       end
     end
   end

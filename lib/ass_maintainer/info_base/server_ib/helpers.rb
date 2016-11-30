@@ -1,7 +1,7 @@
 module AssMaintainer
   class InfoBase
     module ServerIb
-      module EnrepriseServers
+      module EnterpriseServers
         module ServerConnection
           attr_reader :host_port, :user, :password
           def initialize(host_port, user, password)
@@ -23,6 +23,23 @@ module AssMaintainer
           def self.from_cs(cs)
             new cs.srvr, cs.susr, cs.spwd
           end
+        end
+      end
+
+      # Wrapper for manipulate
+      # with real information base deployed in 1C:Enterprise server
+      # ower the 1C Ole classes
+      class InfoBaseWrapper
+        include Interfaces::InfoBaseWrapper
+        attr_accessor :infobase, :server_agent, :claster
+        def initialize(infobase, server_agent, claster)
+          self.infobase = infobase
+          self.server_agent = server_agent
+          self.claster = claster
+        end
+
+        def exists?
+          fail NotImplementedError
         end
       end
     end

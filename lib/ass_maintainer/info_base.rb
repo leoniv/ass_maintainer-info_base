@@ -12,7 +12,7 @@ module AssMaintainer
     # :nodoc:
     class MethodDenied < StandardError
       def initialize(m)
-        super "Infobase is read_only. Method #{m} denied!"
+        super "Infobase is read only. Method #{m} denied!"
       end
     end
 
@@ -106,6 +106,8 @@ module AssMaintainer
       end
     end
 
+    DEFAULT_SAGENT_PORT = '1540'
+
     HOOKS = {
       before_make: ->(ib){},
       after_make: ->(ib){},
@@ -113,17 +115,26 @@ module AssMaintainer
       after_rm: ->(ib){},
     }
 
-    OPTIONS = {
+    WORKERS = {
       maker: nil,
-      destroyer: nil,
-      platform_require: config.platform_require,
-      locale: nil
+      destroyer: nil
     }
 
-    ALL_OPTIONS = OPTIONS.merge HOOKS
+    ARGUMENTS = {
+      platform_require: config.platform_require,
+      sagent_host: nil,
+      sagent_port: nil,
+      sagent_usr: nil,
+      sagent_pwd: nil,
+      claster_usr: nil,
+      claster_pwd: nil,
+      unlock_code: nil,
+    }
 
-    ALL_OPTIONS.each_key do |key|
-      next if key == :maker || key == :destroyer
+    OPTIONS = (ARGUMENTS.merge HOOKS).merge WORKERS
+
+    OPTIONS.each_key do |key|
+      next if WORKERS.keys.include? key
       define_method key do
         options[key]
       end
@@ -139,7 +150,7 @@ module AssMaintainer
       @name = name
       @connection_string = self.class.cs(connection_string.to_s)
       @read_only = read_only
-      @options = ALL_OPTIONS.merge(options)
+      @options = OPTIONS.merge(options)
       if self.connection_string.is? :file
         extend FileIb
       elsif self.connection_string.is? :server
@@ -147,6 +158,7 @@ module AssMaintainer
       else
         fail ArgumentError
       end
+      yield self if block_given?
     end
 
     def add_hook(hook, &block)
@@ -229,6 +241,18 @@ module AssMaintainer
       connection_string.usr
     end
 
+    # Set locale
+    # @param l [String] locale code +en+, +ru+ etc
+    def locale=(l)
+      connection_string.locale = l
+    end
+
+    # Get locale
+    # @return [String]
+    def locale
+      connection_string.locale
+    end
+
     # Set user password
     def pwd=(password)
       connection_string.pwd = password
@@ -252,26 +276,16 @@ module AssMaintainer
         fail("Platform 1C #{platform_require} not found")
     end
 
-    # @return [AssLauncher::Enterprise::Ole::IbConnection]
-    def external
-      conn = self.class.ole(:external, ole_requirement)
+    # Get ole connector specified in +type+ parameter
+    # @param type [Symbol] see {AssLauncher::Api#ole}
+    def ole(type)
+      conn = self.class.ole(type, ole_requirement)
     end
 
     def ole_requirement
       "= #{thick.version}"
     end
     private :ole_requirement
-
-    def try_connect
-      cs = self.class.cs(connection_string.to_s)
-      cs.locale = 'en'
-      ex = external
-      begin
-        ex.__open__ cs
-      ensure
-        ex.__close__
-      end
-    end
 
     def fail_if_not_exists
       fail 'Infobase not exists' unless exists?
@@ -308,6 +322,7 @@ module AssMaintainer
     def common_args
       r = []
       r += ['/L', locale] if locale
+      r += ['/UC', unlock_code] if unlock_code
       r
     end
 
@@ -345,42 +360,8 @@ module AssMaintainer
       @cfg ||= Cfg.new(self) if exists?
     end
 
-    # Returns array of infobase sessions
-    # @return [Array <Session>]
-    def sessions
-      fail NotImplementedError
-    end
-
-    # Lock infobase. It work for server infobase only.
-    # For file infobase it do nothing
-    def lock
-      fail NotImplementedError
-    end
-
-    # Unlock infobase which {#locked_we?}.
-    # It work for server infobase only.
-    # For file infobase it do nothing
-    def unlock
-      fail NotImplementedError
-    end
-
-    # Unlock infobase.
-    # It work for server infobase only.
-    # For file infobase it do nothing
-    def unlock!(uc)
-      fail NotImplementedError
-    end
-
-    # Lock infobase. It work for server infobase only.
-    # For file infobase it return false
-    def locked?
-      fail NotImplementedError
-    end
-
-    # True if infobase locked this
-    # For file infobase it return false
-    def locked_we?
-      fail NotImplementedError
-    end
+    extend Forwardable
+    def_delegators :infobase_wrapper,
+      *Interfaces::InfoBaseWrapper.instance_methods
   end
 end
