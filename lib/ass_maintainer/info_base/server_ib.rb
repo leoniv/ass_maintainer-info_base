@@ -21,10 +21,10 @@ module AssMaintainer
         infobase_wrapper.exists?
       end
 
-      def distroer
-        options[:distroer] || ServerBaseDestroyer.new
+      def destroyer
+        options[:destroyer] || ServerBaseDestroyer.new
       end
-      private :distroer
+      private :destroyer
 
       # @return (see #def_server_agent)
       def server_agent
