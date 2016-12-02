@@ -26,24 +26,12 @@ module AssMaintainer
     require 'ass_maintainer/info_base/file_ib'
     require 'ass_maintainer/info_base/server_ib'
     require 'ass_maintainer/info_base/cfg'
+    require 'ass_maintainer/info_base/default_maker'
 
     # :nodoc:
     class MethodDenied < StandardError
       def initialize(m)
         super "Infobase is read only. Method #{m} denied!"
-      end
-    end
-
-    # Default infobase maker
-    class DefaultMaker
-      include Interfaces::IbMaker
-      # :hodoc:
-      def entry_point
-        infobase.thick
-          .command(:createinfobase,
-                   infobase.connection_string.createinfobase_args +
-                   infobase.common_args)
-          .run.wait.result.verify!
       end
     end
 
