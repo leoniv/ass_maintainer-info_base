@@ -273,7 +273,6 @@ module AssMaintainer::InfoBaseTest
       ib.expects(:connection_string).returns(cs)
       ib.expects(:common_args).returns([3,4])
       ib.expects(:thick).returns(thick)
-      clled = false
       ib.send(:command, :thick, :mode) do |z|
         z[:called] = true
       end.must_equal :command
@@ -291,7 +290,6 @@ module AssMaintainer::InfoBaseTest
       ib.expects(:connection_string).returns(cs)
       ib.expects(:common_args).returns([3,4])
       ib.expects(:thin).returns(thin)
-      clled = false
       ib.send(:command, :thin, :mode) do |z|
         z[:called] = true
       end.must_equal :command
@@ -449,6 +447,19 @@ module AssMaintainer::InfoBaseTest
         @ib = AssMaintainer::InfoBase.new('srv_tmp', Tmp::SRV_IB_CS, false)
         # FIXME: ib.rm! :yes
       end
+
+      def infobase_wrapper_stub(ib = nil, sa = nil, cl = nil)
+        AssMaintainer::InfoBase::ServerIb::InfoBaseWrapper.new(ib, sa, cl)
+      end
+
+
+      it '#exists?' do
+        ib_wrapper = mock
+        ib_wrapper.responds_like(infobase_wrapper_stub)
+        ib_wrapper.expects(:exists?).returns(:i_dont_know)
+        ib.expects(:infobase_wrapper).returns(ib_wrapper)
+        ib.exists?.must_equal :i_dont_know
+      end
     end
 
     describe 'as :file type' do
@@ -550,7 +561,6 @@ module AssMaintainer::InfoBaseTest
   end
 
   describe AssMaintainer::InfoBase::FileIb::FileBaseDestroyer do
-    attr_reader :destroyer
     it '#entry_point' do
       cs = mock
       cs.expects(:path).returns('fake_path_to_infobase')
@@ -559,6 +569,15 @@ module AssMaintainer::InfoBaseTest
       FileUtils.expects(:rm_r).with('fake_path_to_infobase')
       destroyer = self.class.desc.new
       destroyer.execute(infobase)
+    end
+  end
+
+  describe AssMaintainer::InfoBase::ServerIb::ServerBaseDestroyer do
+    it '#entry_point' do
+      destroyer = self.class.desc.new
+      proc {
+        destroyer.execute(:infobase)
+      }.must_raise NotImplementedError
     end
   end
 
@@ -580,6 +599,13 @@ module AssMaintainer::InfoBaseTest
       proc {
         new_wrapper.exists?
       }.must_raise NotImplementedError
+    end
+
+    it '#initialize' do
+      w = new_wrapper(:infobase, :sagent, :claster)
+      w.infobase.must_equal :infobase
+      w.server_agent.must_equal :sagent
+      w.claster.must_equal :claster
     end
   end
 
