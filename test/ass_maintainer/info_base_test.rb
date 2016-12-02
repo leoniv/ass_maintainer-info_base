@@ -462,6 +462,10 @@ module AssMaintainer::InfoBaseTest
         @ib = AssMaintainer::InfoBase.new('tmp', Tmp::FILE_IB_CS, false)
         @ib.rm! :yes if ib.exists?
       end
+
+      it '#make_connection_string' do
+        ib.make_connection_string.must_equal ib.connection_string
+      end
     end
 
     describe 'as read only infobase' do
@@ -524,5 +528,105 @@ module AssMaintainer::InfoBaseTest
       wrapper.infobase.must_equal :infobase
     end
 
+    do_nothing_methods = [:lock, :unlock, :unlock!]
+
+    do_nothing_methods.each do |m|
+      it "#{m} do nothing" do
+        assert_nil wrapper.send m
+      end
+    end
+
+    it '#sessions always returns empty array' do
+      wrapper.sessions.must_equal []
+    end
+
+    it '#locked always false' do
+      wrapper.locked?.must_equal false
+    end
+
+    it '#locked_we? always false' do
+      wrapper.locked_we?.must_equal false
+    end
+  end
+
+  describe AssMaintainer::InfoBase::FileIb::FileBaseDestroyer do
+    attr_reader :destroyer
+    it '#entry_point' do
+      cs = mock
+      cs.expects(:path).returns('fake_path_to_infobase')
+      infobase = mock
+      infobase.expects(:connection_string).returns(cs)
+      FileUtils.expects(:rm_r).with('fake_path_to_infobase')
+      destroyer = self.class.desc.new
+      destroyer.execute(infobase)
+    end
+  end
+
+  describe AssMaintainer::InfoBase::ServerIb::InfoBaseWrapper do
+    def new_wrapper(infobase = nil, sagent = nil, claster = nil)
+      self.class.desc.new infobase, sagent, claster
+    end
+
+    AssMaintainer::InfoBase::Interfaces::InfoBaseWrapper
+      .instance_methods.each do |m|
+      it "#{m} not implemented" do
+        proc {
+          new_wrapper.send m
+        }.must_raise NotImplementedError
+      end
+    end
+
+    it '#exists? not implemented' do
+      proc {
+        new_wrapper.exists?
+      }.must_raise NotImplementedError
+    end
+  end
+
+  describe AssMaintainer::InfoBase::Interfaces::InfoBaseWrapper do
+    include desc
+    desc.instance_methods.each do |m|
+      it "#{m}" do
+        proc {
+          send m
+        }.must_raise NotImplementedError
+      end
+    end
+  end
+
+  describe AssMaintainer::InfoBase::Interfaces::IbMaker do
+    include desc
+    abstracts = [:entry_point]
+    abstracts.each do |m|
+      it "#{m}" do
+        proc {
+          send m
+        }.must_raise NotImplementedError
+      end
+    end
+
+    it '#execute' do
+      expects(:entry_point)
+      execute(:infobase)
+      infobase.must_equal(:infobase)
+    end
+  end
+
+  describe AssMaintainer::InfoBase::Interfaces::IbDestroyer do
+    include desc
+    abstracts = [:entry_point]
+    abstracts.each do |m|
+      it "#{m}" do
+        proc {
+          send m
+        }.must_raise NotImplementedError
+      end
+    end
+
+    it '#execute' do
+      expects(:entry_point)
+      execute(:infobase)
+      infobase.must_equal(:infobase)
+    end
   end
 end
