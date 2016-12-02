@@ -48,4 +48,20 @@ module AssMaintainer::InfoBaseTest
       @ib = AssMaintainer::InfoBase.new('name', Tmp::SRV_IB_CS)
     end
   end
+
+  module Fixtures
+    PATH = File.expand_path('../fixtures', __FILE__)
+
+    XML_FILES = File.join PATH, 'xml_files'
+    fail unless File.directory? XML_FILES
+
+    CF_FILE = File.join PATH, 'ib.cf'
+    fail unless File.file? CF_FILE
+
+    DT_FILE = File.join PATH, 'ib.dt'
+    fail unless File.file? DT_FILE
+
+    HELLO_EPF = File.join PATH, 'hello.epf'
+    fail unless File.file? HELLO_EPF
+  end
 end

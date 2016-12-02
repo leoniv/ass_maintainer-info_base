@@ -477,6 +477,13 @@ module AssMaintainer::InfoBaseTest
       it '#make_connection_string' do
         ib.make_connection_string.must_equal ib.connection_string
       end
+
+      it '#exists?' do
+        File.expects(:file?)
+          .with(File.join(ib.connection_string.path,'1Cv8.1CD'))
+          .returns(:may_be_exists)
+        ib.exists?.must_equal :may_be_exists
+      end
     end
 
     describe 'as read only infobase' do
