@@ -331,6 +331,7 @@ module AssMaintainer
       @cfg ||= Cfg.new(self) if exists?
     end
 
+    require 'forwardable'
     extend Forwardable
     def_delegators :infobase_wrapper,
                    *Interfaces::InfoBaseWrapper.instance_methods
