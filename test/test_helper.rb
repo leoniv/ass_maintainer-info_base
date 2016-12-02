@@ -30,4 +30,22 @@ module AssMaintainer::InfoBaseTest
     FILE_IB_CS = Helper.cs_file file: File.join(TMP_DIR,"#{IB_NAME}.ib.tmp")
     SRV_IB_CS = Helper.cs_srv srvr: 'localhost', ref: IB_NAME
   end
+
+  module FileBaseMaker
+    extend Minitest::Spec::DSL
+
+    attr_reader :ib
+    before do
+      @ib = AssMaintainer::InfoBase.new('name', Tmp::FILE_IB_CS)
+    end
+  end
+
+  module ServerBaseMaker
+    extend Minitest::Spec::DSL
+
+    attr_reader :ib
+    before do
+      @ib = AssMaintainer::InfoBase.new('name', Tmp::SRV_IB_CS)
+    end
+  end
 end

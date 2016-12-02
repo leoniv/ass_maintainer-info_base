@@ -353,8 +353,7 @@ module AssMaintainer
     # block will be passed to arguments builder
     # @return [AssLauncher::Support::Shell::Command]
     def designer(&block)
-      fail_if_not_exists
-      thick.command(:designer, connection_string.to_args + common_args, &block)
+      command(:thick, :designer, &block)
     end
 
     # Build command for run enterprise
@@ -362,17 +361,22 @@ module AssMaintainer
     # @param client [Symbol] +:thin+ or +thick+ client
     # @return [AssLauncher::Support::Shell::Command]
     def enterprise(client, &block)
+      command(client, :enterprise, &block)
+    end
+
+    def command(client, mode, &block)
       fail_if_not_exists
       case client
       when :thin then
         thin.command(connection_string.to_args + common_args, &block)
       when :thick then
-        thick.command(:enterprise, connection_string.to_args + common_args,
+        thick.command(mode, connection_string.to_args + common_args,
                       &block)
       else
-        fail ArgumentError, "Invalid clent #{client}"
+        fail ArgumentError, "Invalid client #{client}"
       end
     end
+    private :command
 
     # Common arguments for all commands
     def common_args
