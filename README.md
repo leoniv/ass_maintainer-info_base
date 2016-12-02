@@ -42,7 +42,7 @@ reqiure 'ass_maintainer/info_base'
 # Describe connection string
 connection_string = 'File="infobase_path";'
 
-# Get InfoBase instanse
+# Get InfoBase instance
 ib = AssMaintainer::InfoBase.new('infobase_name', connection_string, read_only)
 
 # Dump data
@@ -52,18 +52,18 @@ ib.dump(dump_path)
 # As 1C application developer you should make dump of infobase configuration
 
 # Dump configuration
-ibi.cfg.dump(cf_dump_path)
+ib.cfg.dump(cf_dump_path)
 
 # ... etc
 
 ```
 
-For more examples see [examples](./test/examples_test.rb)
+For more examples see [examples](./test/ass_maintainer/examples_test.rb)
 
 ## Test
 
-For runns tests reqiure install 1C:Enterprise platform version defined in
-constant `AssMaintainer::InfoBaseTest::PLATFORM_REQUIRE` in
+For running tests require installs 1C:Enterprise platform version defined in constant
+`PLATFORM_REQUIRE` from
 [test_helper.rb](./test/test_helper.rb)
 
     $export SIMPLECOV=YES && rake test
@@ -76,7 +76,7 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/[USERNAME]/ass_maintainer-info_base.
+Bug reports and pull requests are welcome on GitHub at https://github.com/leoniv/ass_maintainer-info_base.
 
 
 ## License
