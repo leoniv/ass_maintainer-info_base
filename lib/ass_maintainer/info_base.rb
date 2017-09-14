@@ -57,17 +57,17 @@ module AssMaintainer
       destroyer: nil
     }
 
-    # - +:latform_require+ Required 1C:Enterprise version
-    # - +:agent_host+ Host name of 1C:Enterprise server agent
-    # - +:agent_port+ TCP port of 1C:Enterprise server agent on
+    # - +:platform_require+ Required 1C:Enterprise version
+    # - +:sagent_host+ Host name of 1C:Enterprise server agent
+    # - +:sagent_port+ TCP port of 1C:Enterprise server agent on
     #   default {DEFAULT_SAGENT_PORT}
-    # - +:agent_usr+ Admin for 1C:Enterprise server agent
-    # - +:agent_pwd+ Admin password for 1C:Enterprise server agent
-    # - +:laster_usr+ Admin for 1C:Enterprise claster.
+    # - +:sagent_usr+ Admin for 1C:Enterprise server agent
+    # - +:sagent_pwd+ Admin password for 1C:Enterprise server agent
+    # - +:claster_usr+ Admin for 1C:Enterprise claster.
     #   See {ServerIb#claster_usr}
-    # - +:laster_pwd+ Pasword Admin for 1C:Enterprise claster.
+    # - +:claster_pwd+ Pasword Admin for 1C:Enterprise claster.
     #   See {ServerIb#claster_pwd}
-    # - +:nlock_code+ Code for connect to locked infobase aka "/UC" parameter
+    # - +:unlock_code+ Code for connect to locked infobase aka "/UC" parameter
     ARGUMENTS = {
       platform_require: nil,
       sagent_host: nil,
