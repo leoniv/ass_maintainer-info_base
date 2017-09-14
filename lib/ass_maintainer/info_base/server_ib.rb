@@ -26,61 +26,23 @@ module AssMaintainer
       end
       private :destroyer
 
-      # @return (see #def_server_agent)
-      def server_agent
-        @server_agent ||= def_server_agent
-      end
-
-      # @return [EnterpriseServers::ServerAgent]
-      def def_server_agent
-        host = sagent_host || connection_string.servers[0].host
-        port = sagent_port || InfoBase::DEFAULT_SAGENT_PORT
-        EnterpriseServers::ServerAgent.new("#{host}:#{port}",
-                                           sagent_usr,
-                                           sagent_pwd)
-      end
-      private :def_server_agent
-
-      # @param a [EnterpriseServers::ServerAgent]
-      def server_agent=(a)
-        fail ArgumentError unless a.instance_of? ServerAgent
-        @server_agent = a
-      end
-
-      # Set claster user name
-      # @param user_name [String]
-      def cluster_usr=(user_name)
-        connection_string.susr = user_name
-      end
-
-      # Claster user name
-      def claster_usr
-        connection_string.susr || (self.claster_usr = options[:claster_usr])
-      end
-
-      # Set claster user password
-      # @param password [String]
-      def cluster_pwd=(password)
-        connection_string.spwd = password
-      end
-
-      # Claster user password
-      def claster_pwd
-        connection_string.spwd || (self.claster_pwd = options[:claster_pwd])
-      end
-
-      # @return [EnrepriseServers::Claster]
-      def claster
-        EnterpriseServers::Claster.from_cs(connection_string)
-      end
-
       def filled?(fields)
         fields.each do |f|
-          return false if connection_string[f].nil?
+          return false if connection_stringsend(f).nil?
         end
         true
       end
       private :filled?
+
+      # Array of define in +srvr+ field of {#connection_string}
+      # 1C:Eneterprise clasters
+      # @return [Array<EnterpriseServers::Claster>]
+      def clasters
+        connection_string.servers.map do |s|
+          EnterpriseServers::Claster
+            .new("#{s.host}:#{s.port}", claster_usr, claster_pwd)
+        end
+      end
 
       # Connection string fore createinfobase
       def make_connection_string
@@ -91,7 +53,7 @@ module AssMaintainer
 
       # @return {InfoBaseWrapper}
       def infobase_wrapper
-        @infobase_wrapper = InfoBaseWrapper.new(self, server_agent, claster)
+        @infobase_wrapper = InfoBaseWrapper.new(self)
       end
     end
   end

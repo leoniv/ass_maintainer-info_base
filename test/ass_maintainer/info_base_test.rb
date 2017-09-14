@@ -662,4 +662,39 @@ module AssMaintainer::InfoBaseTest
       infobase.must_equal(:infobase)
     end
   end
+
+  describe AssMaintainer::InfoBase::ServerIb::EnterpriseServers::ServerConnection do
+    before do
+      @inst = Class.new do
+        include AssMaintainer::InfoBase::ServerIb::EnterpriseServers::ServerConnection
+      end.new 'fake_host:fake_port', 'user_name', 'password'
+    end
+
+    it '#initialize' do
+      @inst.host_port.must_equal 'fake_host:fake_port'
+      @inst.user.must_equal 'user_name'
+      @inst.password.must_equal 'password'
+    end
+
+    it '#host' do
+      @inst.host.must_equal 'fake_host'
+    end
+
+    it '#port' do
+      @inst.port.must_equal 'fake_port'
+    end
+
+    it '#tcp_ping' do
+      @inst.tcp_ping.must_be_instance_of Net::Ping::TCP
+      @inst.tcp_ping.host.must_equal 'fake_host'
+      @inst.tcp_ping.port.must_equal 'fake_port'
+    end
+
+    it '#ping?' do
+      fake_ping = mock
+      fake_ping.expects(:ping?).returns(:true_false)
+      @inst.expects(:tcp_ping).returns(fake_ping)
+      @inst.ping?.must_equal :true_false
+    end
+  end
 end

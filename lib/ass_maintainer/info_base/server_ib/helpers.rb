@@ -4,25 +4,101 @@ module AssMaintainer
       module EnterpriseServers
         # Mixins for serever connection describers {Claster} {ServerAgent}
         module ServerConnection
-          attr_reader :host_port, :user, :password
-          def initialize(host_port, user, password)
+          # Server user name
+          # See {#initialize} +user+ argument.
+          # @return [String]
+          attr_reader :user
+
+          # Server user password
+          # See {#initialize} +password+ argument.
+          # @return [String]
+          attr_reader :password
+
+          # Host name
+          attr_accessor :host
+
+          # TCP port
+          attr_accessor :port
+
+          # @param host_port [String] string like a +host_name:port_number+
+          # @param user [String] server user name
+          # @param password [String] serever user password
+          def initialize(host_port, user = nil, password = nil)
             fail ArgumentError, 'Host name require' if host_port.to_s.empty?
-            @host_port = host_port.to_s
+            @raw_host_port = host_port
+            @host = parse_host
+            @port = parse_port || default_port
             @user = user
             @password = password
+          end
+
+          # String like a +host_name:port_number+.
+          # @return [String]
+          def host_port
+            "#{host}:#{port}"
+          end
+
+          def parse_port
+            p = @raw_host_port.split(':')[1].to_s.strip
+            return p unless p.empty?
+          end
+          private :parse_port
+
+          def parse_host
+            p = @raw_host_port.split(':')[0].to_s.strip
+            fail ArgumentError, "Invalid host_name for `#{@raw_host_port}'" if\
+              p.empty?
+            p
+          end
+          private :parse_host
+
+          def default_port
+            fail 'Abstract method'
+          end
+
+          # Return +true+ if TCP port available on server
+          def ping?
+            tcp_ping.ping?
+          end
+
+          require 'net/ping/tcp'
+          # @return [Net::Ping::TCP] instance
+          def tcp_ping
+            @tcp_ping ||= Net::Ping::TCP.new(host, port)
           end
         end
 
         # Object descrbed 1C server agent connection
         class ServerAgent
           include ServerConnection
+
+          def default_port
+            InfoBase::DEFAULT_SAGENT_PORT
+          end
+
+          def to_claster
+            Claster.new(host, user, password)
+          end
+
+          # @param ib [InfoBase] serever infobase
+          def connect(ole)
+            ole.__open__(host_port)
+            ole.AuthenticateAgent(user, password) if user
+            ole
+          end
         end
 
-        # Object descrbed 1C claster connection
+        # Object descrbed 1C claster manager connection
         class Claster
+          DEF_PORT = '1541'
           include ServerConnection
-          def self.from_cs(cs)
-            new cs.srvr, cs.susr, cs.spwd
+
+          def default_port
+            DEF_PORT
+          end
+
+          def to_server_agent
+            ServerAgent.new(host, user, password)
           end
         end
       end
@@ -32,12 +108,25 @@ module AssMaintainer
       # ower the 1C Ole classes
       class InfoBaseWrapper
         include Interfaces::InfoBaseWrapper
-        attr_accessor :infobase, :server_agent, :claster
+        attr_accessor :infobase
+        alias_method :ib, :infobase
+
         # @api private
-        def initialize(infobase, server_agent, claster)
+        def initialize(infobase)
           self.infobase = infobase
-          self.server_agent = server_agent
-          self.claster = claster
+        end
+
+        # @return (see #server_agent)
+        def server_agent
+          EnterpriseServers::ServerAgent
+            .new "#{ib.sagent_host || ib.clasters[0].host}:#{ib.sagent_port}",
+                 ib.sagent_usr,
+                 ib.sagent_pwd
+        end
+
+        # @return [AssLauncher::Enterprise::Ole::AgentConnection]
+        def sagent
+          @sagent ||= server_agent.connect(infobase.ole(:sagent))
         end
 
         # True if infobase exists
