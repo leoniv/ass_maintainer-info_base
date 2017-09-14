@@ -393,8 +393,8 @@ module AssMaintainer::InfoBaseTest
           sagent_port: :sagent_port,
           sagent_usr: :sagent_usr,
           sagent_pwd: :sagent_pwd,
-          claster_usr: :claster_usr,
-          claster_pwd: :claster_pwd,
+          cluster_usr: :cluster_usr,
+          cluster_pwd: :cluster_pwd,
           unlock_code: :unlock_code
         }
 
@@ -589,8 +589,8 @@ module AssMaintainer::InfoBaseTest
   end
 
   describe AssMaintainer::InfoBase::ServerIb::InfoBaseWrapper do
-    def new_wrapper(infobase = nil, sagent = nil, claster = nil)
-      self.class.desc.new infobase, sagent, claster
+    def new_wrapper(infobase = nil, sagent = nil, cluster = nil)
+      self.class.desc.new infobase, sagent, cluster
     end
 
     AssMaintainer::InfoBase::Interfaces::InfoBaseWrapper
@@ -609,10 +609,10 @@ module AssMaintainer::InfoBaseTest
     end
 
     it '#initialize' do
-      w = new_wrapper(:infobase, :sagent, :claster)
+      w = new_wrapper(:infobase, :sagent, :cluster)
       w.infobase.must_equal :infobase
       w.server_agent.must_equal :sagent
-      w.claster.must_equal :claster
+      w.cluster.must_equal :cluster
     end
   end
 

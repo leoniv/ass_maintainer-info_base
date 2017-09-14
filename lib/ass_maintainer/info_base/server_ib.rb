@@ -35,12 +35,12 @@ module AssMaintainer
       private :filled?
 
       # Array of define in +srvr+ field of {#connection_string}
-      # 1C:Eneterprise clasters
-      # @return [Array<EnterpriseServers::Claster>]
-      def clasters
+      # 1C:Eneterprise clusters
+      # @return [Array<EnterpriseServers::Cluster>]
+      def clusters
         connection_string.servers.map do |s|
-          EnterpriseServers::Claster
-            .new("#{s.host}:#{s.port}", claster_usr, claster_pwd)
+          EnterpriseServers::Cluster
+            .new("#{s.host}:#{s.port}", cluster_usr, cluster_pwd)
         end
       end
 

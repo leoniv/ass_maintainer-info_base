@@ -2,7 +2,7 @@ module AssMaintainer
   class InfoBase
     module ServerIb
       module EnterpriseServers
-        # Mixins for serever connection describers {Claster} {ServerAgent}
+        # Mixins for serever connection describers {Cluster} {ServerAgent}
         module ServerConnection
           # Server user name
           # See {#initialize} +user+ argument.
@@ -76,8 +76,8 @@ module AssMaintainer
             InfoBase::DEFAULT_SAGENT_PORT
           end
 
-          def to_claster
-            Claster.new(host, user, password)
+          def to_cluster
+            Cluster.new(host, user, password)
           end
 
           # @param ib [InfoBase] serever infobase
@@ -88,8 +88,8 @@ module AssMaintainer
           end
         end
 
-        # Object descrbed 1C claster manager connection
-        class Claster
+        # Object descrbed 1C cluster manager connection
+        class Cluster
           DEF_PORT = '1541'
           include ServerConnection
 
@@ -119,7 +119,7 @@ module AssMaintainer
         # @return (see #server_agent)
         def server_agent
           EnterpriseServers::ServerAgent
-            .new "#{ib.sagent_host || ib.clasters[0].host}:#{ib.sagent_port}",
+            .new "#{ib.sagent_host || ib.clusters[0].host}:#{ib.sagent_port}",
                  ib.sagent_usr,
                  ib.sagent_pwd
         end
