@@ -448,10 +448,9 @@ module AssMaintainer::InfoBaseTest
         # FIXME: ib.rm! :yes
       end
 
-      def infobase_wrapper_stub(ib = nil, sa = nil, cl = nil)
-        AssMaintainer::InfoBase::ServerIb::InfoBaseWrapper.new(ib, sa, cl)
+      def infobase_wrapper_stub(ib = nil)
+        AssMaintainer::InfoBase::ServerIb::InfoBaseWrapper.new(ib)
       end
-
 
       it '#exists?' do
         ib_wrapper = mock
@@ -589,8 +588,8 @@ module AssMaintainer::InfoBaseTest
   end
 
   describe AssMaintainer::InfoBase::ServerIb::InfoBaseWrapper do
-    def new_wrapper(infobase = nil, sagent = nil, cluster = nil)
-      self.class.desc.new infobase, sagent, cluster
+    def new_wrapper(infobase = nil)
+      self.class.desc.new infobase
     end
 
     AssMaintainer::InfoBase::Interfaces::InfoBaseWrapper
@@ -609,10 +608,8 @@ module AssMaintainer::InfoBaseTest
     end
 
     it '#initialize' do
-      w = new_wrapper(:infobase, :sagent, :cluster)
+      w = new_wrapper(:infobase)
       w.infobase.must_equal :infobase
-      w.server_agent.must_equal :sagent
-      w.cluster.must_equal :cluster
     end
   end
 
