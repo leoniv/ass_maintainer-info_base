@@ -5,14 +5,44 @@ module AssMaintainer
       require 'ass_maintainer/info_base/server_ib/helpers'
       # Defauld destroyer for serever infobase
       class ServerBaseDestroyer
+        # Destroy modes
+        MODES = {
+          alive_db: 0,
+          clear_db: 1,
+          destroy_db: 2 }
+
+        # On default database will be destroyed!
+        DEF_MODE = :destroy_db
+
         include Interfaces::IbDestroyer
         def entry_point
           fail NotImplementedError
         end
       end
 
+      class ServerBaseMaker < InfoBase::DefaultMaker
+        REQUIRE_FIELDS = [:dbsrvr, :dbuid, :dbms]
+
+        def entry_point
+          prepare_making
+          super
+        end
+
+        def prepare_making
+          fail "Fields #{REQUIRE_FIELDS} must be filled" unless require_filled?
+          infobase.prepare_making
+        end
+
+        def require_filled?
+          REQUIRE_FIELDS.each do |f|
+            return false if infobase.connection_string.send(f).nil?
+          end
+          true
+        end
+      end
+
       def maker
-        options[:maker] || InfoBase::DefaultMaker.new
+        options[:maker] || ServerBaseMaker.new
       end
       private :maker
 
@@ -26,14 +56,6 @@ module AssMaintainer
       end
       private :destroyer
 
-      def filled?(fields)
-        fields.each do |f|
-          return false if connection_stringsend(f).nil?
-        end
-        true
-      end
-      private :filled?
-
       # Array of define in +srvr+ field of {#connection_string}
       # 1C:Eneterprise clusters
       # @return [Array<EnterpriseServers::Cluster>]
@@ -45,15 +67,31 @@ module AssMaintainer
       end
 
       # Connection string fore createinfobase
-      def make_connection_string
-        fields = [:dbsrvr, :db, :dbms]
-        fail "Required fields #{fields} must be filled" unless filled?(fields)
-        AssLauncher::Support::ConnectionString.new(connection_string.to_s)
+      def prepare_making
+        cs = connection_string
+        set_if_empty :db, cs.ref
+        set_if_empty :crsqldb, 'Y'
+        set_if_empty :susr, cluster_usr
+        set_if_empty :spwd, cluster_pwd
       end
+
+      def set_if_empty(prop, value)
+        connection_string.send("#{prop}=", value) if\
+          connection_string.send(prop).to_s.empty?
+      end
+      private :set_if_empty
 
       # @return {InfoBaseWrapper}
       def infobase_wrapper
         @infobase_wrapper = InfoBaseWrapper.new(self)
+      end
+
+      def set_db_fields(dbsrvr, dbuid, dbpwd, dbms)
+        connection_string.dbsrvr = dbsrvr
+        connection_string.dbuid = dbuid
+        connection_string.dbpwd = dbpwd
+        connection_string.dbms = dbms
+        nil
       end
     end
   end

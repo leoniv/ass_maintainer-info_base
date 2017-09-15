@@ -224,9 +224,29 @@ module AssMaintainer
               Wrappers::Session.new(s, self)
             end
           end
+
+          def wprocesses
+            sagent.GetWorkingProcesses(ole).map do |wpi|
+              Wrappers::WorkingProcessInfo.new(wpi, self)
+            end
+          end
+
+          def infobase_drop(ib_ref, mode = ServerBaseDestroyer::DEF_MODE)
+            return unless infobase_include? ib_ref
+            fail 'FIXME'
+            true
+          end
         end
 
         module Wrappers
+          module WorkingProcessInfo
+            include Support::SendToOle
+            attr_reader :ole, :cluster, :sagent
+            def initialize(ole, cluster)
+              @ole, @cluster, @sagent = ole, cluster, cluster.sagent
+            end
+          end
+
           class Session
             include Support::SendToOle
             attr_reader :ole, :cluster, :sagent
@@ -281,7 +301,6 @@ module AssMaintainer
 
         def sessions
           return [] unless exists?
-          # FIXME:
           clusters.map do |cl|
             cl.infobase_sessions(ib_ref)
           end.flatten
@@ -290,6 +309,10 @@ module AssMaintainer
         # True if infobase exists
         def exists?
           clusters.size > 0
+        end
+
+        def locked?
+          fail "FIXME"
         end
       end
     end

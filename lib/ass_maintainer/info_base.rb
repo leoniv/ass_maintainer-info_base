@@ -23,10 +23,10 @@ module AssMaintainer
     extend AssLauncher::Api
     require 'ass_maintainer/info_base/config'
     require 'ass_maintainer/info_base/interfaces'
+    require 'ass_maintainer/info_base/default_maker'
     require 'ass_maintainer/info_base/file_ib'
     require 'ass_maintainer/info_base/server_ib'
     require 'ass_maintainer/info_base/cfg'
-    require 'ass_maintainer/info_base/default_maker'
 
     # :nodoc:
     class MethodDenied < StandardError
