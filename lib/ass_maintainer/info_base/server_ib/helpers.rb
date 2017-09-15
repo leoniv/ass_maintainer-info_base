@@ -1,18 +1,19 @@
 module AssMaintainer
   class InfoBase
     module ServerIb
+      require 'ass_ole'
       module EnterpriseServers
         # Mixins for serever connection describers {Cluster} {ServerAgent}
         module ServerConnection
           # Server user name
           # See {#initialize} +user+ argument.
           # @return [String]
-          attr_reader :user
+          attr_accessor :user
 
           # Server user password
           # See {#initialize} +password+ argument.
           # @return [String]
-          attr_reader :password
+          attr_accessor :password
 
           # Host name
           attr_accessor :host
@@ -69,26 +70,85 @@ module AssMaintainer
         end
 
         # Object descrbed 1C server agent connection
-        class ServerAgent
+        module ServerAgent
           include ServerConnection
+
+          def self.new(host_port, user, password)
+            Class.new do
+              include ServerAgent
+            end.new host_port, user, password
+          end
+
+          def self.runtime_new
+            Module.new do
+              is_ole_runtime :agent
+            end
+          end
 
           def default_port
             InfoBase::DEFAULT_SAGENT_PORT
           end
 
-          def to_cluster
-            Cluster.new(host, user, password)
+          # Connect to 1C:Eneterprise server via OLE
+          # @param platform_require [String Gem::Requirement]
+          # 1C:Eneterprise version required
+          # @return +self+
+          def connect(platform_require)
+            runtime_run platform_require unless connected?
+            begin
+              authenticate unless authenticate?
+            rescue
+              runtime_stop
+              raise
+            end
+            self
           end
 
-          # @param ib [InfoBase] serever infobase
-          def connect(ole)
-            ole.__open__(host_port)
-            ole.AuthenticateAgent(user, password) if user
-            ole
+          # Close connection with 1C:Enterprise server
+          def disconnect
+            runtime_stop
+          end
+
+          def runtime_stop
+            ole_runtime_get.stop if respond_to? :ole_runtime_get
+          end
+          private :runtime_stop
+
+          def runtime_run(platform_require)
+            self.class.like_ole_runtime ServerAgent.runtime_new unless\
+              respond_to? :ole_runtime_get
+            ole_runtime_get.run host_port, platform_require
+          end
+          private :runtime_run
+
+          def authenticate
+            AuthenticateAgent(user, password.to_s) if\
+              connected? && !authenticate?
+          end
+          private :authenticate
+
+          def connected?
+            respond_to?(:ole_runtime_get) && ole_runtime_get.runned?
+          end
+
+          def authenticate?
+            return false unless connected?
+            begin
+              ole_connector.GetAgentAdmins
+            rescue
+              return false
+            end
+            true
+          end
+
+          def cluster_find(host, port)
+            GetClusters().find do |cl|
+              cl.HostName.upcase == host.upcase && cl.MainPort == port.to_i
+            end
           end
         end
 
-        # Object descrbed 1C cluster manager connection
+        # Object descrbed 1C cluster
         class Cluster
           DEF_PORT = '1541'
           include ServerConnection
@@ -97,8 +157,48 @@ module AssMaintainer
             DEF_PORT
           end
 
-          def to_server_agent
-            ServerAgent.new(host, user, password)
+          attr_reader :sagent
+          attr_reader :ole
+
+          def method_missing(m, *args)
+            ole.send m, *args
+          end
+
+          def attach(agent)
+            @sagent = agent unless sagent
+            ole_set unless ole
+            authenticate
+          end
+
+          def attached?
+            !sagent.nil? && !ole.nil?
+          end
+
+          def authenticate
+            fail 'Cluster must be attachet to ServerAgent' unless attached?
+            sagent.Authenticate(ole, user, password)
+            self
+          end
+
+          def ole_set
+            @ole = sagent.cluster_find(host, port)
+            fail ArgumentError, "Cluster `#{host_port}'"\
+              " not found on server `#{sagent.host_port}'" unless @ole
+          end
+          private :ole_set
+
+          def infobases
+            sagent.GetInfoBases(ole)
+          end
+
+          def infobase_find(ib_ref)
+            infobases.find do |ib|
+              ib.Name.upcase == ib_ref.upcase
+            end
+          end
+
+          def infobase_include?(ib_ref)
+            !infobase_find(ib_ref).nil?
           end
         end
       end
@@ -116,22 +216,29 @@ module AssMaintainer
           self.infobase = infobase
         end
 
-        # @return (see #server_agent)
-        def server_agent
+        # @return [EnterpriseServers::ServerAgent]
+        def sagent_get
           EnterpriseServers::ServerAgent
             .new "#{ib.sagent_host || ib.clusters[0].host}:#{ib.sagent_port}",
                  ib.sagent_usr,
                  ib.sagent_pwd
         end
+        private :sagent_get
 
         # @return [AssLauncher::Enterprise::Ole::AgentConnection]
         def sagent
-          @sagent ||= server_agent.connect(infobase.ole(:sagent))
+          @sagent ||= sagent_get.connect(infobase.platform_require)
+        end
+
+        def main_cluster
+          infobase.clusters.find do |cl|
+            cl.attach(sagent).infobase_include? ib.connection_string.ref
+          end
         end
 
         # True if infobase exists
         def exists?
-          fail NotImplementedError
+          !main_cluster.nil?
         end
       end
     end

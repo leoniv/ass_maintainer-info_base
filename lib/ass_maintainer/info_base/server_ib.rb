@@ -38,7 +38,7 @@ module AssMaintainer
       # 1C:Eneterprise clusters
       # @return [Array<EnterpriseServers::Cluster>]
       def clusters
-        connection_string.servers.map do |s|
+        @clusters ||= connection_string.servers.map do |s|
           EnterpriseServers::Cluster
             .new("#{s.host}:#{s.port}", cluster_usr, cluster_pwd)
         end
