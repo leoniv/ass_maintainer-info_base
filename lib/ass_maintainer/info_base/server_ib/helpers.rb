@@ -3,6 +3,14 @@ module AssMaintainer
     module ServerIb
       require 'ass_ole'
       module EnterpriseServers
+        module Support
+          module SendToOle
+            def method_missing(m, *args)
+              ole.send m, *args
+            end
+          end
+        end
+
         # Mixins for serever connection describers {Cluster} {ServerAgent}
         module ServerConnection
           # Server user name
@@ -67,6 +75,11 @@ module AssMaintainer
           def tcp_ping
             @tcp_ping ||= Net::Ping::TCP.new(host, port)
           end
+
+          def eql?(other)
+            host.upcase == other.host.upcase && port == other.port
+          end
+          alias_method :==, :eql?
         end
 
         # Object descrbed 1C server agent connection
@@ -152,38 +165,41 @@ module AssMaintainer
         class Cluster
           DEF_PORT = '1541'
           include ServerConnection
+          include Support::SendToOle
 
           def default_port
             DEF_PORT
           end
 
-          attr_reader :sagent
-          attr_reader :ole
-
-          def method_missing(m, *args)
-            ole.send m, *args
-          end
-
           def attach(agent)
-            @sagent = agent unless sagent
-            ole_set unless ole
+            @sagent = agent unless @sagent
+            ole_set unless @ole
             authenticate
           end
 
+          def sagent
+            fail 'Cluster must be attachet to ServerAgent' unless @sagent
+            @sagent
+          end
+
+          def ole
+            fail ArgumentError, "Cluster `#{host_port}'"\
+              " not found on server `#{sagent.host_port}'" unless @ole
+            @ole
+          end
+
           def attached?
-            !sagent.nil? && !ole.nil?
+            !@sagent.nil? && !@ole.nil?
           end
 
           def authenticate
-            fail 'Cluster must be attachet to ServerAgent' unless attached?
             sagent.Authenticate(ole, user, password)
             self
           end
 
           def ole_set
             @ole = sagent.cluster_find(host, port)
-            fail ArgumentError, "Cluster `#{host_port}'"\
-              " not found on server `#{sagent.host_port}'" unless @ole
+            ole
           end
           private :ole_set
 
@@ -199,6 +215,29 @@ module AssMaintainer
 
           def infobase_include?(ib_ref)
             !infobase_find(ib_ref).nil?
+          end
+
+          def infobase_sessions(ib_ref)
+            ib = infobase_find(ib_ref)
+            return unless ib
+            sagent.GetInfoBaseSessions(ole, ib).map do |s|
+              Wrappers::Session.new(s, self)
+            end
+          end
+        end
+
+        module Wrappers
+          class Session
+            include Support::SendToOle
+            attr_reader :ole, :cluster, :sagent
+            def initialize(ole, cluster)
+              @ole, @cluster, @sagent = ole, cluster, cluster.sagent
+            end
+
+            def terminate
+              sagent.TerminateSession(cluster.ole, ole)
+            rescue WIN32OLERuntimeError
+            end
           end
         end
       end
@@ -230,15 +269,27 @@ module AssMaintainer
           @sagent ||= sagent_get.connect(infobase.platform_require)
         end
 
-        def main_cluster
-          infobase.clusters.find do |cl|
-            cl.attach(sagent).infobase_include? ib.connection_string.ref
+        def clusters
+          infobase.clusters.select do |cl|
+            cl.attach(sagent).infobase_include? ib_ref
           end
+        end
+
+        def ib_ref
+          ib.connection_string.ref
+        end
+
+        def sessions
+          return [] unless exists?
+          # FIXME:
+          clusters.map do |cl|
+            cl.infobase_sessions(ib_ref)
+          end.flatten
         end
 
         # True if infobase exists
         def exists?
-          !main_cluster.nil?
+          clusters.size > 0
         end
       end
     end

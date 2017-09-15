@@ -41,7 +41,7 @@ module AssMaintainer
         @clusters ||= connection_string.servers.map do |s|
           EnterpriseServers::Cluster
             .new("#{s.host}:#{s.port}", cluster_usr, cluster_pwd)
-        end
+        end.uniq {|cl| [cl.host.upcase, cl.port.upcase]}
       end
 
       # Connection string fore createinfobase
