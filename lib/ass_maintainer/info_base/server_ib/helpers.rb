@@ -3,7 +3,9 @@ module AssMaintainer
     module ServerIb
       require 'ass_ole'
       module EnterpriseServers
+        # Helpers
         module Support
+          # Redirect +method_missing+ to +ole+ object
           module SendToOle
             def method_missing(m, *args)
               ole.send m, *args
@@ -82,27 +84,48 @@ module AssMaintainer
           alias_method :==, :eql?
         end
 
-        # Object descrbed 1C server agent connection
+        # @api private
+        # Object descrbed 1C server agent connection.
+        # @example
+        #   # Get 1C:Eneterprise serever agent connection object and connect
+        #   # to net service
+        #   sagent = ServerAgent.new('localhost:1540', 'admin', 'password')
+        #     .connect('~> 8.3.8.0')
+        #
+        #   # Working with serever agent connection
+        #   sagent.ConnectionString #=> "tcp://localhost:1540"
+        #   cl = sagent.cluster_find 'localhost', '1542'
+        #
+        #   # Close connection
+        #   sagent.disconnect
+        #
         module ServerAgent
           include ServerConnection
 
+          # Make new object of anonymous class which included this module.
           def self.new(host_port, user, password)
             Class.new do
               include ServerAgent
             end.new host_port, user, password
           end
 
+          # Make new [AssOle::Runtimes::Claster::Agent] module for access
+          # to [AssLauncher::Enterprise::Ole::AgentConnection]
+          # @return [Module]
           def self.runtime_new
             Module.new do
               is_ole_runtime :agent
             end
           end
 
+          # @return [String] wrapper for {InfoBase::DEFAULT_SAGENT_PORT}
           def default_port
             InfoBase::DEFAULT_SAGENT_PORT
           end
 
           # Connect to 1C:Eneterprise server via OLE
+          # @note while connecting in instance class will be included
+          # {.runtime_new} module
           # @param platform_require [String Gem::Requirement]
           # 1C:Eneterprise version required
           # @return +self+
@@ -127,6 +150,7 @@ module AssMaintainer
           end
           private :runtime_stop
 
+          # Include and run {.runtime_new} runtime
           def runtime_run(platform_require)
             self.class.like_ole_runtime ServerAgent.runtime_new unless\
               respond_to? :ole_runtime_get
@@ -134,16 +158,19 @@ module AssMaintainer
           end
           private :runtime_run
 
+          # Authenticate {#user}
+          # @raise if not connected
           def authenticate
             AuthenticateAgent(user, password.to_s) if\
               connected? && !authenticate?
           end
-          private :authenticate
 
+          # True if connected
           def connected?
             respond_to?(:ole_runtime_get) && ole_runtime_get.runned?
           end
 
+          # True if #{user} authenticate
           def authenticate?
             return false unless connected?
             begin
@@ -154,6 +181,8 @@ module AssMaintainer
             true
           end
 
+          # @return [nil WIN32OLE] +IClusterInfo+ ole object
+          # @raise if not connected
           def cluster_find(host, port)
             GetClusters().find do |cl|
               cl.HostName.upcase == host.upcase && cl.MainPort == port.to_i
@@ -161,37 +190,51 @@ module AssMaintainer
           end
         end
 
+        # @api private
         # Object descrbed 1C cluster
         class Cluster
+          # Deafult 1C:Enterprise cluster TCP port
           DEF_PORT = '1541'
+
           include ServerConnection
           include Support::SendToOle
 
+          # @return [String] {DEF_PORT}
           def default_port
             DEF_PORT
           end
 
+          # Attache cluster into serever agent
+          # @param agent [ServerAgent]
+          # @raise (see #authenticate)
           def attach(agent)
             @sagent = agent unless @sagent
             ole_set unless @ole
             authenticate
           end
 
+          # @return [ServerAgent] which cluster attached
+          # @raise [RuntimeError] unless cluster attached
           def sagent
             fail 'Cluster must be attachet to ServerAgent' unless @sagent
             @sagent
           end
 
+          # @return +IClusterInfo+ ole object
+          # @raise [RuntimeError] if cluster not found on {#sagent} server
           def ole
             fail ArgumentError, "Cluster `#{host_port}'"\
               " not found on server `#{sagent.host_port}'" unless @ole
             @ole
           end
 
+          # True if cluster attached into {#sagent} serever
           def attached?
             !@sagent.nil? && !@ole.nil?
           end
 
+          # Authenticate cluster user
+          # @raise (see #ole)
           def authenticate
             sagent.Authenticate(ole, user, password)
             self
@@ -203,34 +246,52 @@ module AssMaintainer
           end
           private :ole_set
 
+          # @return [Array<WIN32OLE>] aray of +IInfoBaseShort+ ole objects
+          # registred in cluster
+          # @raise (see #ole)
+          # @raise (see #sagent)
           def infobases
             sagent.GetInfoBases(ole)
           end
 
-          def infobase_find(ib_ref)
+          # Searching infobase in {#infobases} array
+          # @param ib_name [String] infobase name
+          # @return [WIN32OLE] +IInfoBaseShort+ ole object
+          # @raise (see #infobases)
+          def infobase_find(ib_name)
             infobases.find do |ib|
-              ib.Name.upcase == ib_ref.upcase
+              ib.Name.upcase == ib_name.upcase
             end
           end
 
-          def infobase_include?(ib_ref)
-            !infobase_find(ib_ref).nil?
+          # True if infobase registred in cluster
+          # @param ib_name [String] infobase name
+          # @raise (see #infobase_find)
+          def infobase_include?(ib_name)
+            !infobase_find(ib_name).nil?
           end
 
-          def infobase_sessions(ib_ref)
-            ib = infobase_find(ib_ref)
+          # @return [nil Array<Wrappers::Session>] sessions for infobase
+          # runned in cluster. +nil+ if infobase +ib_name+ not registred in
+          # cluster.
+          # @param ib_name [String] infobase name
+          # @raise (see #sagent)
+          def infobase_sessions(ib_name)
+            ib = infobase_find(ib_name)
             return unless ib
             sagent.GetInfoBaseSessions(ole, ib).map do |s|
               Wrappers::Session.new(s, self)
             end
           end
 
+          # FIXME
           def wprocesses
             sagent.GetWorkingProcesses(ole).map do |wpi|
               Wrappers::WorkingProcessInfo.new(wpi, self)
             end
           end
 
+          # FIXME
           def infobase_drop(ib_ref, mode = ServerBaseDestroyer::DEF_MODE)
             return unless infobase_include? ib_ref
             fail 'FIXME'
@@ -238,7 +299,9 @@ module AssMaintainer
           end
         end
 
+        # Wrappers for 1C OLE objects
         module Wrappers
+          # Wrapper for 1C:Enterprise +IWorkingProcessInfo+ ole object
           module WorkingProcessInfo
             include Support::SendToOle
             attr_reader :ole, :cluster, :sagent
@@ -247,13 +310,30 @@ module AssMaintainer
             end
           end
 
+          # Wrapper for 1C:Enterprise +ISessionInfo+ ole object
           class Session
             include Support::SendToOle
-            attr_reader :ole, :cluster, :sagent
+
+            # @api private
+            # @return +ISessionInfo+ ole object
+            attr_reader :ole
+
+            # @api private
+            # @return [EnterpriseServers::Cluster] cluster where session
+            # registred
+            attr_reader :cluster
+
+            # @api private
+            # @return [EnterpriseServers::ServerAgent] 1C server where session
+            # registred
+            attr_reader :sagent
+
+            # @api private
             def initialize(ole, cluster)
               @ole, @cluster, @sagent = ole, cluster, cluster.sagent
             end
 
+            # Terminate session
             def terminate
               sagent.TerminateSession(cluster.ole, ole)
             rescue WIN32OLERuntimeError
@@ -262,6 +342,7 @@ module AssMaintainer
         end
       end
 
+      # @api private
       # Wrapper for manipulate
       # with real information base deployed in 1C:Enterprise server
       # ower the 1C Ole classes
@@ -270,7 +351,6 @@ module AssMaintainer
         attr_accessor :infobase
         alias_method :ib, :infobase
 
-        # @api private
         def initialize(infobase)
           self.infobase = infobase
         end
@@ -289,16 +369,22 @@ module AssMaintainer
           @sagent ||= sagent_get.connect(infobase.platform_require)
         end
 
+        # @return [Array<EnterpriseServers::Cluster>] clusters defined in
+        # +#infobase.clusters+ attached into {#sagent}
         def clusters
           infobase.clusters.select do |cl|
             cl.attach(sagent).infobase_include? ib_ref
           end
         end
 
+        # Helper
         def ib_ref
           ib.connection_string.ref
         end
+        private :ib_ref
 
+        # @return [Array<EnterpriseServers::Wrappers::Session>] infobase
+        # sessions
         def sessions
           return [] unless exists?
           clusters.map do |cl|
@@ -311,6 +397,7 @@ module AssMaintainer
           clusters.size > 0
         end
 
+        # True if infobse locked
         def locked?
           fail "FIXME"
         end

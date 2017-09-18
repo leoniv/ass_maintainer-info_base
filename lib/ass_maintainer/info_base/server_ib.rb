@@ -20,6 +20,7 @@ module AssMaintainer
         end
       end
 
+      # Serever infobase maker
       class ServerBaseMaker < InfoBase::DefaultMaker
         REQUIRE_FIELDS = [:dbsrvr, :dbuid, :dbms]
 
@@ -56,7 +57,8 @@ module AssMaintainer
       end
       private :destroyer
 
-      # Array of define in +srvr+ field of {#connection_string}
+      # @api private
+      # Array of defined in +#connection_string.srvr+
       # 1C:Eneterprise clusters
       # @return [Array<EnterpriseServers::Cluster>]
       def clusters
@@ -66,7 +68,8 @@ module AssMaintainer
         end.uniq {|cl| [cl.host.upcase, cl.port.upcase]}
       end
 
-      # Connection string fore createinfobase
+      # @api private
+      # Prepare connection string for making server infobase
       def prepare_making
         cs = connection_string
         set_if_empty :db, cs.ref
@@ -81,6 +84,7 @@ module AssMaintainer
       end
       private :set_if_empty
 
+      # @api private
       # @return {InfoBaseWrapper}
       def infobase_wrapper
         @infobase_wrapper = InfoBaseWrapper.new(self)
@@ -93,6 +97,7 @@ module AssMaintainer
         connection_string.dbms = dbms
         nil
       end
+      private :set_db_fields
     end
   end
 end
