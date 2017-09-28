@@ -109,6 +109,7 @@ module AssMaintainer::InfoBaseTest
       end
 
       def execute
+        signal_usage_error 'Run in cygwin or windows only!' if Helper.linux?
         ragent.run(srvinfo_get)
         puts "for pass ESRV_ENV to test execute:\n"\
           "export ESRV_ENV=\"--ragent #{ra.host}:#{ra.port} \\\n"\
@@ -117,6 +118,14 @@ module AssMaintainer::InfoBaseTest
           "  --dbsrv user:pass@your_dbms_host:port\""
       rescue RuntimeError => e
         raise Clamp::ExecutionError.new(e.message, '', 1)
+      rescue Errno::ENOTEMPTY => e
+        mess = "rm -r #{srvinfo}: Device or resource busy\n"\
+          "Cause of this: \n"\
+          " 1) other ragent.exe is running and locking srvinfo directory\n"\
+          " 2) other rmngr.exe is running and locking srvinfo directory\n"\
+          "Kill all ragent.exe and rmngr.exe processes and try again"
+        raise Clamp::ExecutionError
+          .new(mess, '', 1)
       end
 
       option '--port', 'PORT', 'ragent.exe tcp port', default: PORT do |s|
