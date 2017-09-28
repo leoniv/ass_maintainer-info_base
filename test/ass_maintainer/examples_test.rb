@@ -28,6 +28,43 @@ module AssMaintainer::InfoBaseTest
         example_ib.rm! :yes if example_ib.exists?
       end
     end
+
+    module EsrvEnv
+      require 'ass_launcher/cmd'
+      require 'shellwords'
+      class Parser < Clamp::Command
+        include AssLauncher::Cmd::Abstract::Option::Dbms
+        include AssLauncher::Cmd::Abstract::Option::Dbsrv
+        include AssLauncher::Cmd::Abstract::Option::Esrv
+        def execute; end
+      end
+
+      def esrv_env
+        skip 'You must passes server environment via'\
+          " environment variable `ESRV_ENV' for example:\n"
+          '$ export ESRV_ENV="--ragent user:pass@host:port \\'\
+          '  --rmngr user:pass@host:port \\'\
+          '  --dbms MSSQLServer \\'\
+          '  --dbsrv user:pass@localhost\\\\sqlexpress"' unless ENV['ESRV_ENV']
+        ENV['ESRV_ENV']
+      end
+
+      def esrv_argv
+        Shellwords.shellsplit(esrv_env)
+      end
+
+      def env_parser
+        @env_parser ||= Parser.new('')
+      end
+
+      def bd_server
+
+      end
+
+      def enterprise_server
+
+      end
+    end
   end
 
   describe 'Make and remove infobase examples' do
@@ -79,15 +116,30 @@ module AssMaintainer::InfoBaseTest
       end
     end
 
-    describe 'Make server infobase' do
-      it 'example' do
-        skip 'NotImplemented'
-      end
-    end
+    describe 'WINDOWS_ONLY!' do
+      include PrepareExample::EsrvEnv
 
-    describe 'Remove server infobase' do
-      it 'example' do
-        skip 'NotImplemented'
+      def skip_if_linux
+        skip 'WINDOWS_ONLY!' if LINUX
+      end
+
+      before do
+        skip_if_linux
+        before_do if respond_to? :before_do
+      end
+
+      describe 'Make server infobase' do
+        it 'example' do
+          raise 'FIXME'
+          skip 'NotImplemented'
+        end
+      end
+
+      describe 'Remove server infobase' do
+        it 'example' do
+          raise 'FIXME'
+          skip 'NotImplemented'
+        end
       end
     end
   end
@@ -281,6 +333,7 @@ module AssMaintainer::InfoBaseTest
     it 'Run enterprise for do something in infobase' do
       #For more info about commands see gem ass_launcher
       ib = exists_infobse
+      raise 'FIXME Fucking 1C'
       cmd = ib.enterprise :thick do
         _C 'Hello World'
         eXecute Fixtures::HELLO_EPF

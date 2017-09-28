@@ -4,15 +4,9 @@ require 'ass_maintainer/info_base'
 require 'minitest/autorun'
 require 'mocha/mini_test'
 module AssMaintainer::InfoBaseTest
-  module Helper
-    extend AssLauncher::Api
-    extend AssLauncher::Support::Platforms
+  require 'test_helper/platform_require'
+  require 'test_helper/helper'
 
-    AssLauncher::Support::Platforms.private_instance_methods.each do |m|
-      public_class_method m
-    end
-  end
-  PLATFORM_REQUIRE = '~> 8.3.9.0'
   AssMaintainer::InfoBase.configure do |c|
     c.platform_require = PLATFORM_REQUIRE
   end

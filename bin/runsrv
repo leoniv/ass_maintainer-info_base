@@ -1,0 +1,143 @@
+#!/usr/bin/env ruby
+
+require "bundler/setup"
+require_relative '../test/test_helper/platform_require'
+require_relative '../test/test_helper/helper'
+require 'net/ping/tcp'
+
+module AssMaintainer::InfoBaseTest
+  module Tmp
+    SRVINFO = File.join Dir.tmpdir, "ass_maintainer_infobase_test.srvinfo"
+  end
+
+  module Server
+    PORT = '11540'
+    REGPORT = '11541'
+    RANGE = '11560:11591'
+
+    class Ragent
+      BIN = 'ragent.exe'
+      attr_reader :platform_require, :port, :regport, :range
+
+      def initialize(platform_require, port = nil, regport = nil, range = nil)
+        @platform_require = platform_require
+        @port = port || PORT
+        @regport = regport || REGPORT
+        @range = range || RANGE
+      end
+
+      def thick
+        @thick ||= Helper.thicks(platform_require).last
+      end
+
+      def exists?
+        path && File.file?(path)
+      end
+
+      def path
+        return unless thick
+        @path ||= thick.path.class.new("#{thick.path.dirname}/#{BIN}")
+      end
+
+      def version
+        return unless exists?
+        thick.version
+      end
+
+      def srvinfo
+        return unless exists?
+        thick.path.class.new(@srvinfo).realpath.to_s
+      end
+
+      def args
+        ['-port', port,
+         '-regport', regport,
+         '-range', range,
+         '-agent',
+         '-d', srvinfo]
+      end
+
+      def cmd
+        path.to_s
+      end
+
+      def running?
+        tcp_ping.ping?
+      end
+
+      def tcp_ping
+        @tcp_ping ||= Net::Ping::TCP.new(host, port)
+      end
+
+      def host
+        'localhost'
+      end
+
+      def run(srvinfo)
+        @srvinfo = srvinfo
+        fail "service on the tcp port `#{port}' is already running" if running?
+        fail "`#{BIN}' v#{version} isn't instaled!" unless exists?
+        Process.spawn "\"#{cmd}\" #{args.join(' ')}"
+      end
+    end
+
+    require 'clamp'
+    class CMD < Clamp::Command
+      def prepare_srv_info
+        FileUtils.rm_r Tmp::SRVINFO if File.exist? Tmp::SRVINFO
+        FileUtils.mkdir_p Tmp::SRVINFO
+        Tmp::SRVINFO
+      end
+
+      def exists?
+        ragent.exists?
+      end
+
+      def running?
+        ragent.running?
+      end
+
+      def ragent
+        @ragent ||= Ragent
+          .new(PLATFORM_REQUIRE, port, regport, range)
+      end
+      alias_method :ra, :ragent
+
+      def srvinfo_get
+        return prepare_srv_info if srvinfo == Tmp::SRVINFO
+        srvinfo || prepare_srv_info
+      end
+
+      def execute
+        ragent.run(srvinfo_get)
+        puts "for pass ESRV_ENV to test execute:\n"\
+          "export ESRV_ENV=\"--ragent #{ra.host}:#{ra.port} \\\n"\
+          "  --rmngr #{ra.host}:#{ra.regport} \\\n"\
+          "  --dbms YOUR_DBMS \\\n"\
+          "  --dbsrv user:pass@your_dbms_host:port\""
+      rescue RuntimeError => e
+        raise Clamp::ExecutionError.new(e.message, '', 1)
+      end
+
+      option '--port', 'PORT', 'ragent.exe tcp port', default: PORT do |s|
+        Integer(s)
+      end
+
+      option '--regport', 'PORT', 'rmngr.exe tcp port', default: REGPORT do |s|
+        Integer(s)
+      end
+
+      option '--range', 'FROM:TO', 'rphost.exe tcp ports range', default: RANGE do |s|
+        from, to = s.split(':')
+        "#{Integer(from)}:#{Integer(to)}"
+      end
+
+      parameter '[SRVINFO]', 'path to ragent.exe srvinfo directory', default: Tmp::SRVINFO do |s|
+        signal_usage_error "Path `#{s}' not found or isn't directory!" unless File.directory? s
+        s
+      end
+    end
+  end
+end
+
+AssMaintainer::InfoBaseTest::Server::CMD.run
