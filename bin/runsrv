@@ -78,6 +78,7 @@ module AssMaintainer::InfoBaseTest
         fail "service on the tcp port `#{port}' is already running" if running?
         fail "`#{BIN}' v#{version} isn't instaled!" unless exists?
         Process.spawn "\"#{cmd}\" #{args.join(' ')}"
+        sleep(3)
       end
     end
 
@@ -108,24 +109,39 @@ module AssMaintainer::InfoBaseTest
         srvinfo || prepare_srv_info
       end
 
+      def errno_enotempty_mess
+        "rm -r #{srvinfo}: Device or resource busy\n"\
+        "Cause of this: \n"\
+        " 1) other ragent.exe is running and locking srvinfo directory\n"\
+        " 2) other rmngr.exe is running and locking srvinfo directory\n"\
+        "Kill suitable ragent.exe and rmngr.exe processes and try again:\n"\
+        "  #{netstat.join("\n  ")}"
+      end
+
+      def netstat
+        `netstat -abn -p tcp`.force_encoding('ASCII-8BIT')
+          .split("\r\n"*2)
+          .map {|i| i.gsub(/\s+/, ' ')}
+          .select {|i| i =~ %r{LISTENING.+r(agent|mngr)\.exe}}
+          .sort_by {|i| i.split(" ").last}
+      end
+
+      def success_mess
+        "for pass ESRV_ENV to test execute:\n"\
+        "export ESRV_ENV=\"--ragent #{ra.host}:#{ra.port} \\\n"\
+        "  --rmngr #{ra.host}:#{ra.regport} \\\n"\
+        "  --dbms YOUR_DBMS \\\n"\
+        "  --dbsrv user:pass@your_dbms_host:port\""
+      end
+
       def execute
         signal_usage_error 'Run in cygwin or windows only!' if Helper.linux?
         ragent.run(srvinfo_get)
-        puts "for pass ESRV_ENV to test execute:\n"\
-          "export ESRV_ENV=\"--ragent #{ra.host}:#{ra.port} \\\n"\
-          "  --rmngr #{ra.host}:#{ra.regport} \\\n"\
-          "  --dbms YOUR_DBMS \\\n"\
-          "  --dbsrv user:pass@your_dbms_host:port\""
+        puts success_mess
       rescue RuntimeError => e
         raise Clamp::ExecutionError.new(e.message, '', 1)
       rescue Errno::ENOTEMPTY => e
-        mess = "rm -r #{srvinfo}: Device or resource busy\n"\
-          "Cause of this: \n"\
-          " 1) other ragent.exe is running and locking srvinfo directory\n"\
-          " 2) other rmngr.exe is running and locking srvinfo directory\n"\
-          "Kill all ragent.exe and rmngr.exe processes and try again"
-        raise Clamp::ExecutionError
-          .new(mess, '', 1)
+        raise Clamp::ExecutionError.new(errno_enotempty_mess, '', 1)
       end
 
       option '--port', 'PORT', 'ragent.exe tcp port', default: PORT do |s|
@@ -144,6 +160,11 @@ module AssMaintainer::InfoBaseTest
       parameter '[SRVINFO]', 'path to ragent.exe srvinfo directory', default: Tmp::SRVINFO do |s|
         signal_usage_error "Path `#{s}' not found or isn't directory!" unless File.directory? s
         s
+      end
+
+      option '--plist', :flag, 'show netstat for rphost.exe and rmngr.exe and exit' do
+        $stderr.puts netstat.join("\n")
+        exit 0
       end
     end
   end
