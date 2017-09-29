@@ -28,6 +28,46 @@ module AssMaintainer::InfoBaseTest
         @parser
       end
 
+      it 'parse --ragent fail' do
+        e = proc {
+          parser('--ragent')
+        }.must_raise Clamp::UsageError
+        e.message.must_match %r{argument require}
+      end
+
+      it 'parse --rmngr fail' do
+        e = proc {
+          parser('--rmngr')
+        }.must_raise Clamp::UsageError
+        e.message.must_match %r{argument require}
+      end
+
+      it 'parse --dbsrv fail' do
+        e = proc {
+          parser('--dbsrv')
+        }.must_raise Clamp::UsageError
+        e.message.must_match %r{argument require}
+      end
+
+      it 'parse --dbms fail' do
+        e = proc {
+          parser('--dbms')
+        }.must_raise Clamp::UsageError
+        e.message.must_match %r{valid values}
+      end
+
+      it 'fail if --dbms wrong argument' do
+        cmd = EXP_ESRV_ENV.dup
+        cmd[:dbms] = '--dbms wrong_argument'
+
+        ch_esrv_env(cmd.values.join(' ')) do
+          e = proc {
+            env_parser
+          }.must_raise Clamp::UsageError
+          e.message.must_match %r{valid values:}i
+        end
+      end
+
       it 'parse --ragent' do
         parser.sagent_usr.must_equal 'rusr'
         parser.sagent_pwd.must_equal 'rpwd'
@@ -98,18 +138,6 @@ module AssMaintainer::InfoBaseTest
             env_parser
           }.must_raise Clamp::UsageError
           e.message.must_match %r{option '--dbsrv' is required}
-        end
-      end
-
-      it 'fail if --dbms wrong argument' do
-        cmd = EXP_ESRV_ENV.dup
-        cmd[:dbms] = '--dbms wrong_argument'
-
-        ch_esrv_env(cmd.values.join(' ')) do
-          e = proc {
-            env_parser
-          }.must_raise Clamp::UsageError
-          e.message.must_match %r{valid values:}i
         end
       end
 

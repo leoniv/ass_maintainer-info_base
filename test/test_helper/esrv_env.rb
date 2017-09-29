@@ -19,14 +19,16 @@ module AssMaintainer::InfoBaseTest
       # @param s [String]
       # @return [Array] ['host:port', 'user', 'password']
       def parse_srv_str(s)
+        fail ArgumentError, 'argument require' if s.to_s.empty?
+
         split = s.split('@')
-        fail ArgumentError if split.size > 2
+        fail ArgumentError, "ivalid argument `#{s}'" if split.size > 2
 
         host = split.pop
         return [host, nil, nil] if split.size.zero?
 
         split = split[0].split(':')
-        fail ArgumentError if split.size > 2
+        fail ArgumentError, "ivalid argument `#{s}'" if split.size > 2
 
         user = split.shift
         pass = split.shift
@@ -78,13 +80,17 @@ module AssMaintainer::InfoBaseTest
       def execute; end
     end
 
+    def help_message
+      "$export #{ESRV_ENV}=\"--ragent user:pass@host:port \\\n"\
+      "  --rmngr user:pass@host:port \\\n"\
+      "  --dbms MSSQLServer \\\n"\
+      '  --dbsrv user:pass@localhost\\\\sqlexpress"'
+    end
+
     def esrv_env
       skip 'You must passes server environment via'\
-        " environment variable `#{ESRV_ENV}' for example:\n"\
-        "$export #{ESRV_ENV}=\"--ragent user:pass@host:port \\\n"\
-        "  --rmngr user:pass@host:port \\\n"\
-        "  --dbms MSSQLServer \\\n"\
-        '  --dbsrv user:pass@localhost\\\\sqlexpress"' if ENV[ESRV_ENV].to_s.empty?
+        " environment variable `#{ESRV_ENV}' for example:\n#{help_message}" if\
+        ENV[ESRV_ENV].to_s.empty?
       ENV[ESRV_ENV]
     end
 
@@ -97,9 +103,18 @@ module AssMaintainer::InfoBaseTest
     end
 
     def env_parser_get
-      p = Parser.new ''
-      p.parse(esrv_argv)
+      p = env_parser_new
+      begin
+        p.parse(esrv_argv)
+      rescue Clamp::UsageError => e
+        raise Clamp::UsageError
+          .new("#{e.message}\n\nUsage `#{EsrvEnv::ESRV_ENV}' example:\n\n#{help_message}\n", '')
+      end
       p
+    end
+
+    def env_parser_new
+      Parser.new ''
     end
   end
 end

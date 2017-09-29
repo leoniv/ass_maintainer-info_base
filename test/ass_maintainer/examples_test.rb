@@ -31,7 +31,8 @@ module AssMaintainer::InfoBaseTest
   end
 
   describe 'Make and remove infobase examples' do
-    describe 'WINDOWS_ONLY!' do
+    describe 'Server infobase' do
+      include EsrvEnv
 
       def skip_if_linux
         skip 'WINDOWS_ONLY!' if LINUX
@@ -42,14 +43,15 @@ module AssMaintainer::InfoBaseTest
         before_do if respond_to? :before_do
       end
 
-      describe 'Make server infobase' do
+      describe 'Make infobase' do
         it 'example' do
           raise 'FIXME'
+          env_parser
           skip 'NotImplemented'
         end
       end
 
-      describe 'Remove server infobase' do
+      describe 'Remove infobase' do
         it 'example' do
           raise 'FIXME'
           skip 'NotImplemented'
@@ -57,51 +59,53 @@ module AssMaintainer::InfoBaseTest
       end
     end
 
-    describe 'Make file infobase' do
-      include PrepareExample::RmInfobaseBefore
+    describe 'File infobse' do
+      describe 'Make infobse' do
+        include PrepareExample::RmInfobaseBefore
 
-      it 'example' do
-        read_only = false
-        # Get instance
-        ib = AssMaintainer::InfoBase
-          .new('test_infobase', Tmp::FILE_IB_CS, read_only)
+        it 'example' do
+          read_only = false
+          # Get instance
+          ib = AssMaintainer::InfoBase
+            .new('test_infobase', Tmp::FILE_IB_CS, read_only)
 
-        # Check infobase not exists
-        ib.exists?.must_equal false
-        File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
-          .must_equal false
+          # Check infobase not exists
+          ib.exists?.must_equal false
+          File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
+            .must_equal false
 
-        # Make infobase
-        ib.make
+          # Make infobase
+          ib.make
 
-        # Check infobase exists
-        ib.exists?.must_equal true
-        File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
-          .must_equal true
+          # Check infobase exists
+          ib.exists?.must_equal true
+          File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
+            .must_equal true
+        end
       end
-    end
 
-    describe 'Remove file infobase' do
-      include PrepareExample::MakeInfobaseBefore
+      describe 'Remove infobase' do
+        include PrepareExample::MakeInfobaseBefore
 
-      it 'example' do
-        read_only = false
-        # Get instance
-        ib = AssMaintainer::InfoBase
-          .new('test_infobase', Tmp::FILE_IB_CS, read_only)
+        it 'example' do
+          read_only = false
+          # Get instance
+          ib = AssMaintainer::InfoBase
+            .new('test_infobase', Tmp::FILE_IB_CS, read_only)
 
-        # Check infobase exists
-        ib.exists?.must_equal true
-        File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
-          .must_equal true
+          # Check infobase exists
+          ib.exists?.must_equal true
+          File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
+            .must_equal true
 
-        # Make infobase
-        ib.rm! :yes
+          # Make infobase
+          ib.rm! :yes
 
-        # Check infobase not exists
-        ib.exists?.must_equal false
-        File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
-          .must_equal false
+          # Check infobase not exists
+          ib.exists?.must_equal false
+          File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
+            .must_equal false
+        end
       end
     end
   end
