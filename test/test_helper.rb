@@ -58,4 +58,6 @@ module AssMaintainer::InfoBaseTest
     HELLO_EPF = File.join PATH, 'hello.epf'
     fail unless File.file? HELLO_EPF
   end
+
+  require 'test_helper/esrv_env'
 end
