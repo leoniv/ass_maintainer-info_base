@@ -126,10 +126,14 @@ module AssMaintainer::InfoBaseTest
           .sort_by {|i| i.split(" ").last}
       end
 
+      def rmngr_host
+        `hostname`.strip
+      end
+
       def success_mess
         "for pass ESRV_ENV to test execute:\n"\
         "export ESRV_ENV=\"--ragent #{ra.host}:#{ra.port} \\\n"\
-        "  --rmngr #{ra.host}:#{ra.regport} \\\n"\
+        "  --rmngr #{rmngr_host}:#{ra.regport} \\\n"\
         "  --dbms YOUR_DBMS \\\n"\
         "  --dbsrv user:pass@your_dbms_host:port\""
       end

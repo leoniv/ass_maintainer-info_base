@@ -38,6 +38,10 @@ module AssMaintainer::InfoBaseTest
         skip 'WINDOWS_ONLY!' if LINUX
       end
 
+      def infobase_name
+        "test_infobase_#{hash.abs}"
+      end
+
       before do
         skip_if_linux
         before_do if respond_to? :before_do
@@ -52,8 +56,61 @@ module AssMaintainer::InfoBaseTest
       end
 
       describe 'Remove infobase' do
+        def cluster_host_port
+          "#{env_parser.cluster_host}:#{env_parser.cluster_port}"
+        end
+
+        def create_infobase(ref)
+          cs = Helper.cs_srv srvr: cluster_host_port, ref: ref
+          cs.dbms = env_parser.dbms
+          cs.db = ref
+          cs.dbsrvr = env_parser.dbsrv_host
+          cs.dbuid = env_parser.dbsrv_usr
+          cs.dbpwd = env_parser.dbsrv_pwd
+          cs.crsqldb = 'Y'
+          cs.susr = env_parser.cluster_usr
+          cs.spwd = env_parser.cluster_pwd
+
+          cmd = Clients::THICK.command(:createinfobase) do
+            connection_string cs
+          end
+
+          cmd.run.wait.result.verify!
+        end
+
+        def before_do
+          create_infobase(infobase_name)
+        end
+
         it 'example' do
-          raise 'FIXME'
+          read_only = false
+          # Preapare connection_string
+          connection_string = Helper.cs_srv srvr: cluster_host_port, ref: infobase_name
+
+          # Get infobase instance
+          infobase = AssMaintainer::InfoBase.new(infobase_name,
+                 connection_string,
+                 read_only,
+          # This is nessesary for connect to 1C:Enterprise server agent
+                 sagent_host: env_parser.sagent_host,
+                 sagent_port: env_parser.sagent_port, #default 1540
+                 sagent_usr: env_parser.sagent_usr,
+                 sagent_pwd: env_parser.sagent_pwd,
+          # This is nessesary for connect to 1C:Enterprise cluster
+                 cluster_usr: env_parser.sagent_usr,
+                 cluster_pwd: env_parser.sagent_pwd
+                )
+
+
+          # Infobase must be exists
+          infobase.exists?.must_equal true
+
+          # Delete infobase
+          infobase.rm! :yes
+
+          # Infobase wont be exists
+          infobase.exists?.wont_equal true
+
           skip 'NotImplemented'
         end
       end

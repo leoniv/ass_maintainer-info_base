@@ -95,7 +95,7 @@ module AssMaintainer::InfoBaseTest
     end
 
     def esrv_argv
-      Shellwords.shellsplit(esrv_env)
+      Shellwords.shellsplit(esrv_env.gsub('\\','\\\\\\'))
     end
 
     def env_parser

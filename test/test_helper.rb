@@ -13,7 +13,7 @@ module AssMaintainer::InfoBaseTest
 
   module Clients
     THICK = Helper.thicks(PLATFORM_REQUIRE).last
-    "Platform  #{PLATFORM_REQUIRE} not found" unless THICK
+    fail "Platform  #{PLATFORM_REQUIRE} not found" unless THICK
   end
 
   LINUX = Helper.linux?
