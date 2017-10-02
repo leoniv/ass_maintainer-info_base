@@ -11,6 +11,85 @@ module AssMaintainer
               ole.send m, *args
             end
           end
+
+          module OleRuntime
+            # Close connection with 1C:Enterprise server
+            def disconnect
+              runtime_stop
+            end
+
+            # True if connected
+            def connected?
+              respond_to?(:ole_runtime_get) && ole_runtime_get.runned?
+            end
+
+            def runtime_stop
+              ole_runtime_get.stop if respond_to? :ole_runtime_get
+            end
+            private :runtime_stop
+
+            # Include and run {.runtime_new} runtime
+            def runtime_run(host_port, platform_require)
+              self.class.like_ole_runtime OleRuntime.runtime_new(self) unless\
+                respond_to? :ole_runtime_get
+              ole_runtime_get.run host_port, platform_require
+            end
+            private :runtime_run
+
+            # Make new runtime module +AssOle::Runtimes::Claster::(Agent|Wp)+
+            # for access to
+            # +AssLauncher::Enterprise::Ole::(AgentConnection|WpConnection)+
+            # @param inst [#runtime_type] +#runtime_type+ must returns
+            #   +:wp+ or +:agent+ values
+            # @return [Module]
+            def self.runtime_new(inst)
+              Module.new do
+                is_ole_runtime inst.runtime_type
+              end
+            end
+
+            def _connect(host_port, platform_require)
+              runtime_run host_port, platform_require unless connected?
+              begin
+                authenticate unless authenticate?
+              rescue
+                runtime_stop
+                raise
+              end
+              self
+            end
+
+            def authenticate
+              fail 'Abstract method'
+            end
+
+            def authenticate?
+              fail 'Abstract method'
+            end
+          end
+
+          module InfoBaseFind
+            def infobases
+              fail 'Abstract method'
+            end
+
+            # Searching infobase in {#infobases} array
+            # @param ib_name [String] infobase name
+            # @return [WIN32OLE] +IInfoBaseShort+ ole object
+            # @raise (see #infobases)
+            def infobase_find(ib_name)
+              infobases.find do |ib|
+                ib.Name.upcase == ib_name.upcase
+              end
+            end
+
+            # True if infobase registred in cluster
+            # @param ib_name [String] infobase name
+            # @raise (see #infobase_find)
+            def infobase_include?(ib_name)
+              !infobase_find(ib_name).nil?
+            end
+          end
         end
 
         # Mixins for serever connection describers {Cluster} {ServerAgent}
@@ -101,6 +180,7 @@ module AssMaintainer
         #
         module ServerAgent
           include ServerConnection
+          include Support::OleRuntime
 
           # Make new object of anonymous class which included this module.
           def self.new(host_port, user, password)
@@ -109,18 +189,13 @@ module AssMaintainer
             end.new host_port, user, password
           end
 
-          # Make new [AssOle::Runtimes::Claster::Agent] module for access
-          # to [AssLauncher::Enterprise::Ole::AgentConnection]
-          # @return [Module]
-          def self.runtime_new
-            Module.new do
-              is_ole_runtime :agent
-            end
-          end
-
           # @return [String] wrapper for {InfoBase::DEFAULT_SAGENT_PORT}
           def default_port
             InfoBase::DEFAULT_SAGENT_PORT
+          end
+
+          def runtime_type
+            :agent
           end
 
           # Connect to 1C:Eneterprise server via OLE
@@ -130,44 +205,14 @@ module AssMaintainer
           # 1C:Eneterprise version required
           # @return +self+
           def connect(platform_require)
-            runtime_run platform_require unless connected?
-            begin
-              authenticate unless authenticate?
-            rescue
-              runtime_stop
-              raise
-            end
-            self
+            _connect(host_port, platform_require)
           end
-
-          # Close connection with 1C:Enterprise server
-          def disconnect
-            runtime_stop
-          end
-
-          def runtime_stop
-            ole_runtime_get.stop if respond_to? :ole_runtime_get
-          end
-          private :runtime_stop
-
-          # Include and run {.runtime_new} runtime
-          def runtime_run(platform_require)
-            self.class.like_ole_runtime ServerAgent.runtime_new unless\
-              respond_to? :ole_runtime_get
-            ole_runtime_get.run host_port, platform_require
-          end
-          private :runtime_run
 
           # Authenticate {#user}
           # @raise if not connected
           def authenticate
-            AuthenticateAgent(user, password.to_s) if\
+            AuthenticateAgent(user.to_s, password.to_s) if\
               connected? && !authenticate?
-          end
-
-          # True if connected
-          def connected?
-            respond_to?(:ole_runtime_get) && ole_runtime_get.runned?
           end
 
           # True if #{user} authenticate
@@ -199,6 +244,9 @@ module AssMaintainer
         # @api private
         # Object for comunication with 1C Working process.
         module WpConnection
+          include Support::OleRuntime
+          include Support::InfoBaseFind
+
           # Make new object of anonymous class which included this module.
           # @param wp_info (see #initialize)
           def self.new(wp_info)
@@ -207,24 +255,59 @@ module AssMaintainer
             end.new wp_info
           end
 
-          # Make new [AssOle::Runtimes::Claster::Wp] module for access
-          # to [AssLauncher::Enterprise::Ole::WpConnection]
-          # @return [Module]
-          def self.runtime_new
-            Module.new do
-              is_ole_runtime :wprocess
-            end
-          end
-
+          attr_reader :wp_info
           # @param wp_info [Wrappers::WorkingProcessInfo]
           def initialize(wp_info)
             @wp_info = wp_info
           end
 
-          def connect
-            raise FIXME
+          def runtime_type
+            :wp
+          end
 
-            self
+          def sagent
+            wp_info.sagent
+          end
+
+          def cluster
+            wp_info.cluster
+          end
+
+          def host_port
+            "#{wp_info.HostName}:#{wp_info.MainPort}"
+          end
+
+          def connect
+            _connect host_port, sagent.platform_require
+          end
+
+          def authenticate
+            AuthenticateAdmin(cluster.user.to_s, cluster.password.to_s) if\
+              connected? && !authenticate?
+          end
+
+          def authenticate?
+            false
+          end
+
+          def authenticate_infobase_admin(user, pass)
+            AddAuthentication(user.to_s, pass.to_s)
+          end
+
+          def infobse_info_new(ib_name)
+            r = CreateInfoBaseInfo()
+            r.Name = ib_name
+            r
+          end
+
+          def drop_infobase(ib_name, mode, user, pass)
+            return unless infobase_include? ib_name
+            authenticate_infobase_admin(user, pass)
+            DropInfoBase(infobse_info_new(ib_name), mode)
+          end
+
+          def infobases
+            GetInfoBases()
           end
         end
 
@@ -236,6 +319,7 @@ module AssMaintainer
 
           include ServerConnection
           include Support::SendToOle
+          include Support::InfoBaseFind
 
           # @return [String] {DEF_PORT}
           def default_port
@@ -274,7 +358,7 @@ module AssMaintainer
           # Authenticate cluster user
           # @raise (see #ole)
           def authenticate
-            sagent.Authenticate(ole, user, password)
+            sagent.Authenticate(ole, user.to_s, password.to_s)
             self
           end
 
@@ -290,23 +374,6 @@ module AssMaintainer
           # @raise (see #sagent)
           def infobases
             sagent.GetInfoBases(ole)
-          end
-
-          # Searching infobase in {#infobases} array
-          # @param ib_name [String] infobase name
-          # @return [WIN32OLE] +IInfoBaseShort+ ole object
-          # @raise (see #infobases)
-          def infobase_find(ib_name)
-            infobases.find do |ib|
-              ib.Name.upcase == ib_name.upcase
-            end
-          end
-
-          # True if infobase registred in cluster
-          # @param ib_name [String] infobase name
-          # @raise (see #infobase_find)
-          def infobase_include?(ib_name)
-            !infobase_find(ib_name).nil?
           end
 
           # @return [nil Array<Wrappers::Session>] sessions for infobase
@@ -334,18 +401,20 @@ module AssMaintainer
           # @return [WpConnection] object for comunication with 1C Working
           #   process
           def wp_connection
-            @wp_connection ||= wprocesses[0].connect
+            @wp_connection ||= wprocesses.select{|p| p.Running == 1}[0].connect
           end
 
           # Delete infobase
           # @param ib_name [String] infobase name
-          # @param mode [Fixnum] defines what should do with
+          # @param mode [Symbol] defines what should do with
           #   infobase's database. See {ServerBaseDestroyer::MODES}
-          def drop_infobase(ib_name, mode)
+          def drop_infobase(ib_name, mode, user, pass)
             fail ArgumentError, "Invalid mode #{mode}" unless\
-              ServerBaseDestroyer::MODES.values.include? mode
+              ServerBaseDestroyer::MODES[mode]
             return unless infobase_include? ib_name
-            wp_connection.drop_infobase(ib_name, mode)
+            wp_connection.drop_infobase(ib_name,
+                                        ServerBaseDestroyer::MODES[mode],
+                                        user, pass)
           end
         end
 
@@ -457,10 +526,16 @@ module AssMaintainer
         end
 
         # Dlete infobase.
+        # @note For first item calls {Cluster#drop_infobase} with real
+        #   +mode+ and uses mode == :alive_db for all other.
+        #   Otherwise when mode == :destroy_db raises error
+        #   "Не найдена база данных * в SQL-сервере *"
         # @param mode (see Cluster#drop_infobase)
         def drop_infobase(mode)
-          clusters.each do |cl|
-            cl.drop_infobase(ib_ref, mode)
+          clusters.each_with_index do |cl, index|
+            cl.drop_infobase(ib_ref,
+                             (index == 0 ? mode : :alive_db),
+                             ib.usr, ib.pwd)
           end
         end
       end
