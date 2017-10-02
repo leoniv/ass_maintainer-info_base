@@ -188,6 +188,44 @@ module AssMaintainer
               cl.HostName.upcase == host.upcase && cl.MainPort == port.to_i
             end
           end
+
+          # TODO
+          def platform_require
+            return unless connected?
+            ole_connector.send(:__ole_binary__).requirement.to_s
+          end
+        end
+
+        # @api private
+        # Object for comunication with 1C Working process.
+        module WpConnection
+          # Make new object of anonymous class which included this module.
+          # @param wp_info (see #initialize)
+          def self.new(wp_info)
+            Class.new do
+              include WpConnection
+            end.new wp_info
+          end
+
+          # Make new [AssOle::Runtimes::Claster::Wp] module for access
+          # to [AssLauncher::Enterprise::Ole::WpConnection]
+          # @return [Module]
+          def self.runtime_new
+            Module.new do
+              is_ole_runtime :wprocess
+            end
+          end
+
+          # @param wp_info [Wrappers::WorkingProcessInfo]
+          def initialize(wp_info)
+            @wp_info = wp_info
+          end
+
+          def connect
+            raise FIXME
+
+            self
+          end
         end
 
         # @api private
@@ -284,29 +322,45 @@ module AssMaintainer
             end
           end
 
-          # FIXME
+          # All Working processes in cluster
+          # @return [Array<Wrappers::WorkingProcessInfo]
           def wprocesses
             sagent.GetWorkingProcesses(ole).map do |wpi|
               Wrappers::WorkingProcessInfo.new(wpi, self)
             end
           end
 
-          # FIXME
-          def infobase_drop(ib_ref, mode = ServerBaseDestroyer::DEF_MODE)
-            return unless infobase_include? ib_ref
-            fail 'FIXME'
-            true
+          # Connect to working process
+          # @return [WpConnection] object for comunication with 1C Working
+          #   process
+          def wp_connection
+            @wp_connection ||= wprocesses[0].connect
+          end
+
+          # Delete infobase
+          # @param ib_name [String] infobase name
+          # @param mode [Fixnum] defines what should do with
+          #   infobase's database. See {ServerBaseDestroyer::MODES}
+          def drop_infobase(ib_name, mode)
+            fail ArgumentError, "Invalid mode #{mode}" unless\
+              ServerBaseDestroyer::MODES.values.include? mode
+            return unless infobase_include? ib_name
+            wp_connection.drop_infobase(ib_name, mode)
           end
         end
 
         # Wrappers for 1C OLE objects
         module Wrappers
           # Wrapper for 1C:Enterprise +IWorkingProcessInfo+ ole object
-          module WorkingProcessInfo
+          class WorkingProcessInfo
             include Support::SendToOle
-            attr_reader :ole, :cluster, :sagent
+            attr_reader :ole, :cluster, :sagent, :connection
             def initialize(ole, cluster)
               @ole, @cluster, @sagent = ole, cluster, cluster.sagent
+            end
+
+            def connect
+              WpConnection.new(self).connect
             end
           end
 
@@ -397,9 +451,17 @@ module AssMaintainer
           clusters.size > 0
         end
 
-        # True if infobse locked
+        # True if infobase locked
         def locked?
           fail "FIXME"
+        end
+
+        # Dlete infobase.
+        # @param mode (see Cluster#drop_infobase)
+        def drop_infobase(mode)
+          clusters.each do |cl|
+            cl.drop_infobase(ib_ref, mode)
+          end
         end
       end
     end

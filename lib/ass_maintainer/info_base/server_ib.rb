@@ -5,18 +5,20 @@ module AssMaintainer
       require 'ass_maintainer/info_base/server_ib/helpers'
       # Defauld destroyer for serever infobase
       class ServerBaseDestroyer
-        # Destroy modes
-        MODES = {
-          alive_db: 0,
-          clear_db: 1,
-          destroy_db: 2 }
+        # Destroy infobase modes defines what should do with infobase's database.
+        # - 0 - databse willn't be deleted
+        # - 1 - databse will be deleted
+        # - 2 - database willn't be deleted but will be cleared
+        MODES = {alive_db: 0,
+                 destroy_db: 1,
+                 clear_db: 2}.freeze
 
         # On default database will be destroyed!
         DEF_MODE = :destroy_db
 
         include Interfaces::IbDestroyer
         def entry_point
-          fail NotImplementedError
+          infobase.infobase_wrapper.drop_infobase(DEF_MODE)
         end
       end
 
@@ -87,7 +89,7 @@ module AssMaintainer
       # @api private
       # @return {InfoBaseWrapper}
       def infobase_wrapper
-        @infobase_wrapper = InfoBaseWrapper.new(self)
+        @infobase_wrapper ||= InfoBaseWrapper.new(self)
       end
 
       def set_db_fields(dbsrvr, dbuid, dbpwd, dbms)

@@ -39,7 +39,7 @@ module AssMaintainer::InfoBaseTest
       end
 
       def infobase_name
-        "test_infobase_#{hash.abs}"
+        "delete_me_test_infobase_#{hash.abs}"
       end
 
       before do
