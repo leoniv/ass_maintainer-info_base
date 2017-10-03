@@ -30,11 +30,144 @@ module AssMaintainer::InfoBaseTest
     end
   end
 
-  describe 'Make and remove infobase examples' do
+  module SkipIfLinux
+    def skip_if_linux
+      skip 'WINDOWS_ONLY!' if LINUX
+    end
+  end
+
+  describe 'Differences beetween Server and File types infobases' do
+    include AssLauncher::Api
+
+    describe 'File infobase' do
+      it 'basic usage example' do
+        # Prepare file infobase connection string (via AssLauncher::Api mixin)
+        connection_string = cs_file(file: File.join(Dir.tmpdir, "fake_infobase_#{hash}.ib"))
+
+        # Get instance
+        ib = AssMaintainer::InfoBase.new('instace_name', connection_string)
+
+        # And play whth instance
+        ib.exists?.must_equal false
+
+        # Fails because infobase not exists
+        e = proc {
+          ib.dump('fake_path')
+        }.must_raise RuntimeError
+        e.message.must_match %r{Infobase not exists}
+      end
+
+      it 'make and remove example' do
+        # Prepare file infobase connection string (via AssLauncher::Api mixin)
+        connection_string = cs_file(file: File.join(Dir.tmpdir, "fake_infobase_#{hash}.ib"))
+
+        # Get instance with read_only == false
+        ib = AssMaintainer::InfoBase.new('instace_name', connection_string, false)
+
+        # And play with instance
+        ib.exists?.must_equal false
+        ib.make # make empty file infobase
+        ib.exists?.must_equal true
+        ib.rm! :yes # remove infobase
+        ib.exists?.must_equal false
+      end
+    end
+
     describe 'Server infobase' do
       include EsrvEnv
+      include SkipIfLinux
 
-      def create_infobase(ref)
+      before do
+        skip_if_linux
+      end
+
+      it 'basic usage example' do
+        # Prepare file infobase connection string (via AssLauncher::Api mixin)
+        connection_string = cs_srv(srvr: "#{env_parser.cluster_host}:#{env_parser.cluster_port}",
+                                   ref: "delete_me_fake_infobase_#{hash}")
+
+        # Server infobase required connecting to
+        # 1C:Enterprise services sach as "Server agent: ragent.exe" and
+        # "Cluster: rmngr.exe" for detects exists infobase or not, lock/unlock
+        # infobase, getting sessions etc.
+
+        # Get new instance because for old instance will not work
+        ib = AssMaintainer::InfoBase.new(
+          'instance_name', connection_string,
+          # Passing to instance 1C services connection parameters via options.
+          # But If your ragent.exe and rmngr.exe running on one host and has
+          # standart ports and doesn't have a admins this step not required.
+          sagent_host: env_parser.sagent_host, # Optional dragent.exe host name. Default uses, #srvr host from connection string
+          sagent_port: env_parser.sagent_port, # Optional ragent.exe port. Default is 1540.
+          sagent_usr: env_parser.sagent_usr, # Optional ragent.exe admin name
+          sagent_pwd: env_parser.sagent_pwd, # Optional ragent.exe admin password
+          cluster_usr: env_parser.cluster_usr, # Optional rmngr.exe admin name
+          cluster_pwd: env_parser.cluster_pwd # Optional rmngr.exe admin password
+        )
+
+        # And play whth instance
+        ib.exists?.must_equal false
+
+        # Fails because infobase not exists
+        e = proc {
+          ib.dump('fake_path')
+        }.must_raise RuntimeError
+        e.message.must_match %r{Infobase not exists}
+      end
+
+      it 'make and remove example' do
+        # Prepare file infobase connection string (via AssLauncher::Api mixin)
+        connection_string = cs_srv(srvr: "#{env_parser.cluster_host}:#{env_parser.cluster_port}",
+                                   ref: "delete_me_fake_infobase_#{hash}")
+
+        # Get instance with read_only == false
+        ib = AssMaintainer::InfoBase.new(
+          'instance_name', connection_string, false,
+          # Passing to instance 1C services connection parameters via options.
+          sagent_host: env_parser.sagent_host,
+          sagent_port: env_parser.sagent_port,
+          sagent_usr: env_parser.sagent_usr,
+          sagent_pwd: env_parser.sagent_pwd,
+          cluster_usr: env_parser.cluster_usr,
+          cluster_pwd: env_parser.cluster_pwd
+        )
+
+        # And play with instance
+        ib.exists?.must_equal false
+
+        # It fail because for make server infobase require passing DBMS
+        # parameters
+        e = proc {
+          ib.make
+        }.must_raise RuntimeError
+        e.message.must_match %r{Fields \[:dbsrvr, :dbuid, :dbms\] must be filled}
+
+        # Passinng DBMS parameters:
+        ib.connection_string.dbms   = env_parser.dbms # required type of DBMS
+        ib.connection_string.dbsrvr = env_parser.dbsrv_host # required DMBS host
+        ib.connection_string.dbuid  = env_parser.dbsrv_usr # optional DMBS user name
+        ib.connection_string.dbpwd  = env_parser.dbsrv_pwd # optional DBMS user password
+        ib.connection_string.db     = connection_string.ref # optional. Default uses #ref value of connection string
+
+        ib.make # make empty file ib
+        ib.exists?.must_equal true
+        ib.rm! :yes # remove ib
+        ib.exists?.must_equal false
+      end
+    end
+  end
+
+  describe 'Infobase type sensitive examples' do
+    describe 'Server infobase' do
+      include EsrvEnv
+      include SkipIfLinux
+
+      def cluster_host_port
+        "#{env_parser.cluster_host}:#{env_parser.cluster_port}"
+      end
+
+      def prepare_new_infobase
+        fail 'TODO dlete it becouse 1C show GUI dialog if cluster user not authenticate'
         cs = Helper.cs_srv srvr: cluster_host_port, ref: ref
         cs.dbms = env_parser.dbms
         cs.db = ref
@@ -52,8 +185,8 @@ module AssMaintainer::InfoBaseTest
         cmd.run.wait.result.verify!
       end
 
-      def skip_if_linux
-        skip 'WINDOWS_ONLY!' if LINUX
+      def remove_infobase
+        fail 'FIXME'
       end
 
       def infobase_name
@@ -62,103 +195,75 @@ module AssMaintainer::InfoBaseTest
 
       before do
         skip_if_linux
-        before_do if respond_to? :before_do
+        prepare_new_infobase
       end
 
-      describe 'Make infobase' do
+      after do
+        remove_infobase
+      end
+
+      describe 'Lock unlock infobase' do
         it 'example' do
           raise 'FIXME'
-          env_parser
-          skip 'NotImplemented'
         end
       end
 
-      describe 'Remove infobase' do
-        def cluster_host_port
-          "#{env_parser.cluster_host}:#{env_parser.cluster_port}"
-        end
-
-        def before_do
-          create_infobase(infobase_name)
-        end
-
+      describe 'Infobase sessions' do
         it 'example' do
-          read_only = false
-          # Preapare connection_string
-          connection_string = Helper.cs_srv srvr: cluster_host_port, ref: infobase_name
-
-          # Get infobase instance
-          infobase = AssMaintainer::InfoBase.new(infobase_name,
-                 connection_string,
-                 read_only,
-          # This is nessesary for connect to 1C:Enterprise server agent
-                 sagent_host: env_parser.sagent_host,
-                 sagent_port: env_parser.sagent_port, #default 1540
-                 sagent_usr: env_parser.sagent_usr,
-                 sagent_pwd: env_parser.sagent_pwd,
-          # This is nessesary for connect to 1C:Enterprise cluster
-                 cluster_usr: env_parser.sagent_usr,
-                 cluster_pwd: env_parser.sagent_pwd
-                )
-
-          # Infobase must be exists
-          infobase.exists?.must_equal true
-
-          # Delete infobase
-          infobase.rm! :yes
-
-          # Infobase wont be exists
-          infobase.exists?.wont_equal true
+          raise 'FIXME'
         end
       end
     end
 
-    describe 'File infobse' do
-      describe 'Make infobse' do
-        include PrepareExample::RmInfobaseBefore
+    describe 'File infobase' do
+      describe 'Lock unlock infobase' do
+        include PrepareExample::MakeInfobaseBefore
 
-        it 'example' do
-          read_only = false
+        it '#lock, #unlock, #unlock! do nothing and #locked?, #locked_we? always false' do
           # Get instance
-          ib = AssMaintainer::InfoBase
-            .new('test_infobase', Tmp::FILE_IB_CS, read_only)
+          ib = example_ib
 
-          # Check infobase not exists
-          ib.exists?.must_equal false
-          File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
-            .must_equal false
+          ib.locked?.must_equal false
+          ib.locked_we?.must_equal false
 
-          # Make infobase
-          ib.make
+          ib.lock.must_be_nil
 
-          # Check infobase exists
-          ib.exists?.must_equal true
-          File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
-            .must_equal true
+          ib.locked?.must_equal false
+          ib.locked_we?.must_equal false
+
+          ib.unlock.must_be_nil
+          ib.unlock!.must_be_nil
+
+          ib.locked?.must_equal false
+          ib.locked_we?.must_equal false
         end
       end
 
-      describe 'Remove infobase' do
+      describe 'Infobase sessions' do
         include PrepareExample::MakeInfobaseBefore
 
-        it 'example' do
-          read_only = false
+        it '#sessions always returns empty array' do
           # Get instance
-          ib = AssMaintainer::InfoBase
-            .new('test_infobase', Tmp::FILE_IB_CS, read_only)
+          ib = example_ib
 
-          # Check infobase exists
-          ib.exists?.must_equal true
-          File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
-            .must_equal true
+          # #sessions returns empty array
+          ib.sessions.must_be :empty?
 
-          # Make infobase
-          ib.rm! :yes
+          # Get external connection object
+          external = ib.ole(:external)
 
-          # Check infobase not exists
-          ib.exists?.must_equal false
-          File.file?(File.join(ib.connection_string.path, '1Cv8.1CD'))
-            .must_equal false
+          begin
+            # Connect to infobase
+            external.__open__ ib.connection_string
+
+            # External connection is opened
+            external.__opened__?.must_equal true
+
+            # But #sessions always returns empty array
+            ib.sessions.must_be :empty?
+          ensure
+            external.__close__ if external
+          end
         end
       end
     end

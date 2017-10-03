@@ -64,6 +64,10 @@ module AssMaintainer
       # 1C:Eneterprise clusters
       # @return [Array<EnterpriseServers::Cluster>]
       def clusters
+        fail NotImplementedError,
+            'Multiple servers deployments not supported' if\
+            connection_string.servers.size > 1
+
         @clusters ||= connection_string.servers.map do |s|
           EnterpriseServers::Cluster
             .new("#{s.host}:#{s.port}", cluster_usr, cluster_pwd)

@@ -117,7 +117,7 @@ module AssMaintainer
       @name = name
       @connection_string = self.class.cs(connection_string.to_s)
       @read_only = read_only
-      @options = OPTIONS.merge(options)
+      @options = validate_options(options)
       case self.connection_string.is
       when :file then extend FileIb
       when :server then extend ServerIb
@@ -125,6 +125,13 @@ module AssMaintainer
       end
       yield self if block_given?
     end
+
+    def validate_options(options)
+      _opts = options.keys - OPTIONS.keys
+      fail ArgumentError, "Unknown options: #{_opts}" unless _opts.empty?
+      OPTIONS.merge(options)
+    end
+    private :validate_options
 
     # Add hook. In all hook whill be passed +self+
     # @raise [ArgumentError] if invalid hook name or not block given
