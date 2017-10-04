@@ -184,6 +184,10 @@ module AssMaintainer::InfoBaseTest
           sagent_port: env_parser.sagent_port, sagent_usr: env_parser.sagent_usr,
           sagent_pwd: env_parser.sagent_pwd, cluster_usr: env_parser.cluster_usr,
           cluster_pwd: env_parser.cluster_pwd).make
+
+        @example_ib.restore! Fixtures::DT_FILE_WITH_ROOT_USER
+        @example_ib.usr = 'root'
+        @example_ib
       end
 
       before do
@@ -197,6 +201,11 @@ module AssMaintainer::InfoBaseTest
       describe 'Lock unlock infobase' do
         it 'example' do
           ib = example_ib
+
+          # FIXME
+
+          require 'pry'
+          binding.pry
 
           ib.locked?.must_equal false
           ib.locked_we?.must_equal false

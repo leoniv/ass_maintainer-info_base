@@ -241,132 +241,7 @@ module AssMaintainer
           end
         end
 
-        # @api private
-        # Object for comunication with 1C Working process.
-        module WpConnection
-          include Support::OleRuntime
-          include Support::InfoBaseFind
-
-          # Make new object of anonymous class which included this module.
-          # @param wp_info (see #initialize)
-          def self.new(wp_info)
-            Class.new do
-              include WpConnection
-            end.new wp_info
-          end
-
-          attr_reader :wp_info
-          # @param wp_info [Wrappers::WorkingProcessInfo]
-          def initialize(wp_info)
-            @wp_info = wp_info
-          end
-
-          def runtime_type
-            :wp
-          end
-
-          def sagent
-            wp_info.sagent
-          end
-
-          def cluster
-            wp_info.cluster
-          end
-
-          def host_port
-            "#{wp_info.HostName}:#{wp_info.MainPort}"
-          end
-
-          def connect
-            _connect host_port, sagent.platform_require
-          end
-
-          def authenticate
-            AuthenticateAdmin(cluster.user.to_s, cluster.password.to_s) if\
-              connected? && !authenticate?
-          end
-
-          def authenticate?
-            false
-          end
-
-          def authenticate_infobase_admin(user, pass)
-            AddAuthentication(user.to_s, pass.to_s)
-          end
-
-          def infobse_info_new(ib_name)
-            r = CreateInfoBaseInfo()
-            r.Name = ib_name
-            r
-          end
-
-          def drop_infobase(ib_name, mode, user, pass)
-            return unless infobase_include? ib_name
-            authenticate_infobase_admin(user, pass)
-            DropInfoBase(infobse_info_new(ib_name), mode)
-          end
-
-          def infobase_info(ib_name)
-            fail 'Infobase not exists' unless infobase_include? ib_name
-            infobase_find ib_name
-          end
-
-          def locked?(ib_name, permission_code)
-            ii = infobase_info(ib_name)
-            raise 'FIXME'
-            ii.SessionsDenied && ii.PermissionCode != permission_code
-          end
-
-          def connections(ib_name)
-            GetInfoBaseConnections(infobase_info(ib_name))
-          end
-
-          def connection_get(ib_name, conn_id)
-            conections.find {|c| c.ConnID}
-          end
-
-          def lock_sessions!(ib_name, from, to, code, mess)
-            fail ArgumentError, 'Permission code won\'t be empty' if\
-              code.to_s.empty?
-            ii = infobase_info(ib_name)
-            ii.DeniedFrom = (from.nil? ? Date.parse('1973.09.07') : from).to_time
-            ii.DeniedTo   = (to.nil? ? Date.parse('2073.09.07') : to).to_time
-            ii.DeniedMessage = mess.to_s
-            ii.SessionsDenied = true
-            ii.PermissionCode = code.to_s
-            UpdateInfoBase(ii)
-          end
-
-          def unlock_sessions!(ib_name)
-            ii = infobase_info(ib_name)
-            ii.DeniedFrom          = Date.parse('1973.09.07')
-            ii.DeniedTo            = Date.parse('1973.09.07')
-            ii.DeniedMessage       = ''
-            ii.SessionsDenied      = false
-            ii.PermissionCode      = ''
-            UpdateInfoBase(ii)
-          end
-
-          # @return [true false] old state of +ScheduledJobsDenied+
-          def lock_schjobs!(ib_name)
-            ii = infobase_info(ib_name)
-            old_state = ii.ScheduledJobsDenied
-            ii.ScheduledJobsDenied = true
-            UpdateInfoBase(ii)
-            old_state
-          end
-
-          # @param old_state [true false] state returned {#lock_schjobs!}
-          def unlock_schjobs!(ib_name)
-            ii = infobase_info(ib_name)
-            ii.ScheduledJobsDenied = true
-            UpdateInfoBase(ii)
-          end
-
-          def infobases
-            GetInfoBases()
-          end
-        end
+        require 'ass_maintainer/info_base/server_ib/enterprise_servers/wp_connection'
 
         # @api private
         # Object descrbed 1C cluster
@@ -457,21 +332,16 @@ module AssMaintainer
           # Connect to working process
           # @return [WpConnection] object for comunication with 1C Working
           #   process
-          def wp_connection
-            @wp_connection ||= wprocesses.select{|p| p.Running == 1}[0].connect
+          def wp_connection(infobase_wrapper)
+            @wp_connection ||= wprocesses.select{|p| p.Running == 1}[0].connect(infobase_wrapper)
           end
 
           # Delete infobase
-          # @param ib_name [String] infobase name
+          # @param infobase_wrapper [InfoBaseWrapper] infobase wrapper
           # @param mode [Symbol] defines what should do with
-          #   infobase's database. See {ServerBaseDestroyer::MODES}
-          def drop_infobase(ib_name, mode, user, pass)
-            fail ArgumentError, "Invalid mode #{mode}" unless\
-              ServerBaseDestroyer::MODES[mode]
-            return unless infobase_include? ib_name
-            wp_connection.drop_infobase(ib_name,
-                                        ServerBaseDestroyer::MODES[mode],
-                                        user, pass)
+          #   infobase's database. See {WpConnection::DROP_MODES}
+          def drop_infobase(infobase_wrapper, mode)
+            wp_connection(infobase_wrapper).drop_infobase(mode)
           end
         end
 
@@ -559,7 +429,7 @@ module AssMaintainer
 
         def wp_connection
           fail 'Infobase not exists' unless exists?
-          clusters[0].wp_connection
+          clusters[0].wp_connection(self)
         end
 
         # Helper
@@ -610,9 +480,7 @@ module AssMaintainer
         # @param mode (see Cluster#drop_infobase)
         def drop_infobase(mode)
           clusters.each_with_index do |cl, index|
-            cl.drop_infobase(ib_ref,
-                             (index == 0 ? mode : :alive_db),
-                             ib.usr, ib.pwd)
+            cl.drop_infobase(self, (index == 0 ? mode : :alive_db))
           end
         end
       end
