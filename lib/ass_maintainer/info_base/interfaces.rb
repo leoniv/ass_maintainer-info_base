@@ -34,6 +34,8 @@ module AssMaintainer
       # Interface for {FileIb::InfoBaseWrapper} and
       # {ServerIb::InfoBaseWrapper} classes
       module InfoBaseWrapper
+        require 'date'
+
         # Returns array of infobase sessions
         # For file infobase returns empty array
         # @return [Array <Session>]
@@ -43,7 +45,7 @@ module AssMaintainer
 
         # Lock infobase. It work for server infobase only.
         # For file infobase it do nothing
-        def lock
+        def lock(*_)
           fail NotImplementedError
         end
 
@@ -54,7 +56,7 @@ module AssMaintainer
           fail NotImplementedError
         end
 
-        # Unlock infobase.
+        # Force unlock infobase.
         # It work for server infobase only.
         # For file infobase it do nothing
         def unlock!

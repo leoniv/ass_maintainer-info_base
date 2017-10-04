@@ -50,7 +50,7 @@ module AssMaintainer
         end
 
         # (see Interfaces::InfoBaseWrapper#lock)
-        def lock
+        def lock(*_)
         end
 
         # (see Interfaces::InfoBaseWrapper#unlock)

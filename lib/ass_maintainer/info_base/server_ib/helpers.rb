@@ -306,6 +306,55 @@ module AssMaintainer
             DropInfoBase(infobse_info_new(ib_name), mode)
           end
 
+          def infobase_info(ib_name)
+            fail 'Infobase not exists' unless infobase_include? ib_name
+            infobase_find ib_name
+          end
+
+          def locked?(ib_name, permission_code)
+            ii = infobase_info(ib_name)
+            raise 'FIXME'
+            ii.SessionsDenied && ii.PermissionCode != permission_code
+          end
+
+          def lock_sessions!(ib_name, from, to, code, mess)
+            fail ArgumentError, 'Permission code won\'t be empty' if\
+              code.to_s.empty?
+            ii = infobase_info(ib_name)
+            ii.DeniedFrom = (from.nil? ? Date.parse('1973.09.07') : from).to_time
+            ii.DeniedTo   = (to.nil? ? Date.parse('2073.09.07') : to).to_time
+            ii.DeniedMessage = mess.to_s
+            ii.SessionsDenied = true
+            ii.PermissionCode = code.to_s
+            UpdateInfoBase(ii)
+          end
+
+          def unlock_sessions!(ib_name)
+            ii = infobase_info(ib_name)
+            ii.DeniedFrom          = Date.parse('1973.09.07')
+            ii.DeniedTo            = Date.parse('1973.09.07')
+            ii.DeniedMessage       = ''
+            ii.SessionsDenied      = false
+            ii.PermissionCode      = ''
+            UpdateInfoBase(ii)
+          end
+
+          # @return [true false] old state of +ScheduledJobsDenied+
+          def lock_schjobs!(ib_name)
+            ii = infobase_info(ib_name)
+            old_state = ii.ScheduledJobsDenied
+            ii.ScheduledJobsDenied = true
+            UpdateInfoBase(ii)
+            old_state
+          end
+
+          # @param old_state [true false] state returned {#lock_schjobs!}
+          def unlock_schjobs!(ib_name)
+            ii = infobase_info(ib_name)
+            ii.ScheduledJobsDenied = true
+            UpdateInfoBase(ii)
+          end
+
           def infobases
             GetInfoBases()
           end
@@ -500,6 +549,11 @@ module AssMaintainer
           end
         end
 
+        def wp_connection
+          fail 'Infobase not exists' unless exists?
+          clusters[0].wp_connection
+        end
+
         # Helper
         def ib_ref
           ib.connection_string.ref
@@ -520,9 +574,24 @@ module AssMaintainer
           clusters.size > 0
         end
 
-        # True if infobase locked
+        # FIXME: True if infobase locked
         def locked?
-          fail "FIXME"
+          fail 'FIXME'
+          wp_connection.locked? ib_ref
+        end
+
+        # FIXME: True if infobase locked and #unlock_code equal
+        def locked_we?
+          fail 'FIXME'
+        end
+
+        # Lock infoabse
+        # @param from [Date Time] locking from time
+        # @param to [Date Time] locking until time
+        def lock(from: Time.now, to: Time.now + 3600, message: '')
+          fail '#unlock_code is required' if ib.unlock_code.to_s.empty?
+          raise 'FIXME'
+          fail NotImplementedError
         end
 
         # Dlete infobase.
