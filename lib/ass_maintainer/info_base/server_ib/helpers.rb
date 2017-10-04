@@ -220,7 +220,7 @@ module AssMaintainer
             return false unless connected?
             begin
               ole_connector.GetAgentAdmins
-            rescue
+            rescue WIN32OLERuntimeError
               return false
             end
             true
@@ -355,8 +355,8 @@ module AssMaintainer
               @ole, @cluster, @sagent = ole, cluster, cluster.sagent
             end
 
-            def connect
-              WpConnection.new(self).connect
+            def connect(infobase_wrapper)
+              WpConnection.new(self).connect(infobase_wrapper)
             end
           end
 
@@ -436,7 +436,6 @@ module AssMaintainer
         def ib_ref
           ib.connection_string.ref
         end
-        private :ib_ref
 
         # @return [Array<EnterpriseServers::Wrappers::Session>] infobase
         # sessions

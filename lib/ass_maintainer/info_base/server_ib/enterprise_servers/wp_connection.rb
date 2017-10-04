@@ -64,7 +64,7 @@ module AssMaintainer
             _connect host_port, sagent.platform_require
           end
 
-          def infobase_name
+          def ib_ref
             infobase_wrapper.ib_ref
           end
 
@@ -73,18 +73,24 @@ module AssMaintainer
             authenticate_infobase_admin
           end
 
-          def authenticate?
-            return false unless connected?
-            begin
-              ole_connector.GetInfoBaseConnections(infobase_name)
-            rescue
-              return false
-            end
+          def authenticate_infobase_admin
+            AddAuthentication(user, pass)
+            ole_connector.GetInfoBaseConnections(ib_info_create)
             true
           end
 
+          def ib_info_create
+            ii = createInfoBaseInfo
+            ii.Name = ib_ref
+            ii
+          end
+
+          def authenticate?
+            false
+          end
+
           def infobase_exists?
-            infobase_include? infobase_name
+            infobase_include? ib_ref
           end
 
           def drop_connections
@@ -93,24 +99,18 @@ module AssMaintainer
             end
           end
 
-          def authenticate_infobase_admin
-            AddAuthentication(user, pass)
-            fail "Authentication fault!" if !authenticate?
-          end
-
           def drop_infobase(mode)
             fail ArgumentError, "Invalid mode #{mode}" unless DROP_MODES[mode]
-            fail 'FIXME'
-            #FIXME authenticate_infobase_admin(user, pass)
-            #FIXME lock_sessions!(nil, nil, '')
-            #FIXME lock_schjobs!
+            lock_sessions_with_code!(nil, nil, "BEFORE DROP INFOBASE", '')
+            lock_schjobs!
             drop_connections
             DropInfoBase(infobase_info, DROP_MODES[mode])
           end
 
           def infobase_info
             fail 'Infobase not exists' unless infobase_exists?
-            infobase_find infobase_name
+            authenticate_infobase_admin
+            infobase_find ib_ref
           end
 
           def locked?
@@ -124,20 +124,25 @@ module AssMaintainer
           end
 
           def unlock_code
-            infobase_wrapper.ib.unlock_code
+            infobase_wrapper.ib.unlock_code.to_s
           end
 
           def lock_sessions!(from, to, mess)
+            lock_sessions_with_code! from, to, unlock_code, mess
+          end
+
+          def lock_sessions_with_code!(from, to, code, mess)
             fail ArgumentError, 'Permission code won\'t be empty' if\
-              unlock_code.empty?
+              code.to_s.empty?
             ii = infobase_info
             ii.DeniedFrom = (from.nil? ? Date.parse('1973.09.07') : from).to_time
             ii.DeniedTo   = (to.nil? ? Date.parse('2073.09.07') : to).to_time
             ii.DeniedMessage = mess.to_s
             ii.SessionsDenied = true
-            ii.PermissionCode = unlock_code
+            ii.PermissionCode = code
             UpdateInfoBase(ii)
           end
+          private :lock_sessions_with_code!
 
           def unlock_sessions!
             ii = infobase_info
@@ -152,16 +157,16 @@ module AssMaintainer
           # @return [true false] old state of +ScheduledJobsDenied+
           def lock_schjobs!
             ii = infobase_info
-            old_state = ii.ScheduledJobsDenied
+            @schjobs_old_state = ii.ScheduledJobsDenied
             ii.ScheduledJobsDenied = true
             UpdateInfoBase(ii)
-            old_state
+            @schjobs_old_state
           end
 
           # @param old_state [true false] state returned {#lock_schjobs!}
           def unlock_schjobs!
             ii = infobase_info
-            ii.ScheduledJobsDenied = true
+            ii.ScheduledJobsDenied = @schjobs_old_state || true
             UpdateInfoBase(ii)
           end
 
