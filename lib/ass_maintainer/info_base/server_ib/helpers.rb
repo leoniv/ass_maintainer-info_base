@@ -317,6 +317,14 @@ module AssMaintainer
             ii.SessionsDenied && ii.PermissionCode != permission_code
           end
 
+          def connections(ib_name)
+            GetInfoBaseConnections(infobase_info(ib_name))
+          end
+
+          def connection_get(ib_name, conn_id)
+            conections.find {|c| c.ConnID}
+          end
+
           def lock_sessions!(ib_name, from, to, code, mess)
             fail ArgumentError, 'Permission code won\'t be empty' if\
               code.to_s.empty?
