@@ -58,10 +58,19 @@ module AssMaintainer
             infobase_wrapper.ib.pwd.to_s
           end
 
+          def ping?
+            wp_info.ping?
+          end
+
           # @param infobase_wrapper [InfoBaseWrapper]
           def connect(infobase_wrapper)
             @infobase_wrapper = infobase_wrapper
             _connect host_port, sagent.platform_require
+          end
+
+          def reconnect
+            ole_connector.__close__
+            ole_connector.__open__ host_port
           end
 
           def ib_ref
@@ -93,17 +102,9 @@ module AssMaintainer
             infobase_include? ib_ref
           end
 
-          def drop_connections
-            connections.each do |conn|
-              Disconnect(conn)
-            end
-          end
-
-          def drop_infobase(mode)
+          def drop_infobase!(mode)
             fail ArgumentError, "Invalid mode #{mode}" unless DROP_MODES[mode]
-            lock_sessions_with_code!(nil, nil, "BEFORE DROP INFOBASE", '')
-            lock_schjobs!
-            drop_connections
+            lock_infobase!(nil, nil, "BEFORE DROP INFOBASE", '')
             DropInfoBase(infobase_info, DROP_MODES[mode])
           end
 
@@ -116,22 +117,14 @@ module AssMaintainer
           def locked?
             ii = infobase_info
             raise 'FIXME'
-            ii.SessionsDenied && ii.PermissionCode != permission_code
+            #FIXME ii.SessionsDenied && ii.PermissionCode != permission_code
           end
 
           def connections
             GetInfoBaseConnections(infobase_info)
           end
 
-          def unlock_code
-            infobase_wrapper.ib.unlock_code.to_s
-          end
-
-          def lock_sessions!(from, to, mess)
-            lock_sessions_with_code! from, to, unlock_code, mess
-          end
-
-          def lock_sessions_with_code!(from, to, code, mess)
+          def lock_sessions!(from, to, code, mess)
             fail ArgumentError, 'Permission code won\'t be empty' if\
               code.to_s.empty?
             ii = infobase_info
@@ -142,7 +135,25 @@ module AssMaintainer
             ii.PermissionCode = code
             UpdateInfoBase(ii)
           end
-          private :lock_sessions_with_code!
+
+          def drop_sessions
+            infobase_wrapper.sessions.each do |sess|
+              sess.terminate
+            end
+          end
+
+          def drop_connections
+            connections.each do |conn|
+              Disconnect(conn)
+            end
+          end
+
+          def lock_infobase!(from, to, code, mess)
+            lock_sessions!(from, to, code, mess)
+            lock_schjobs!
+            drop_sessions
+            drop_connections
+          end
 
           def unlock_sessions!
             ii = infobase_info

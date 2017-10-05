@@ -11,7 +11,7 @@ module AssMaintainer
 
         include Interfaces::IbDestroyer
         def entry_point
-          infobase.infobase_wrapper.drop_infobase(DROP_MODE)
+          infobase.infobase_wrapper.drop_infobase!(DROP_MODE)
         end
       end
 

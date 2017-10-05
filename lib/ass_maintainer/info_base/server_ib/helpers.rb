@@ -239,6 +239,11 @@ module AssMaintainer
             return unless connected?
             ole_connector.send(:__ole_binary__).requirement.to_s
           end
+
+          def reconnect
+            ole_connector.__close__
+            ole_connector.__open__ host_port
+          end
         end
 
         require 'ass_maintainer/info_base/server_ib/enterprise_servers/wp_connection'
@@ -263,7 +268,7 @@ module AssMaintainer
           # @raise (see #authenticate)
           def attach(agent)
             @sagent = agent unless @sagent
-            ole_set unless @ole
+            ole_set
             authenticate
           end
 
@@ -333,15 +338,24 @@ module AssMaintainer
           # @return [WpConnection] object for comunication with 1C Working
           #   process
           def wp_connection(infobase_wrapper)
-            @wp_connection ||= wprocesses.select{|p| p.Running == 1}[0].connect(infobase_wrapper)
+            if !@wp_connection.nil? && !@wp_connection.ping?
+              @wp_connection = nil
+            end
+            @wp_connection ||= alive_wprocess_get.connect(infobase_wrapper)
+          end
+
+          def alive_wprocess_get
+            wp_info = wprocesses.select{|p| p.Running == 1 && p.ping?}[0]
+            fail 'No alive working processes found' unless wp_info
+            wp_info
           end
 
           # Delete infobase
           # @param infobase_wrapper [InfoBaseWrapper] infobase wrapper
           # @param mode [Symbol] defines what should do with
           #   infobase's database. See {WpConnection::DROP_MODES}
-          def drop_infobase(infobase_wrapper, mode)
-            wp_connection(infobase_wrapper).drop_infobase(mode)
+          def drop_infobase!(infobase_wrapper, mode)
+            wp_connection(infobase_wrapper).drop_infobase!(mode)
           end
         end
 
@@ -357,6 +371,17 @@ module AssMaintainer
 
             def connect(infobase_wrapper)
               WpConnection.new(self).connect(infobase_wrapper)
+            end
+
+            # Return +true+ if TCP port available on server
+            def ping?
+              tcp_ping.ping?
+            end
+
+            require 'net/ping/tcp'
+            # @return [Net::Ping::TCP] instance
+            def tcp_ping
+              @tcp_ping ||= Net::Ping::TCP.new(hostName, mainPort)
             end
           end
 
@@ -472,14 +497,14 @@ module AssMaintainer
         end
 
         # Dlete infobase.
-        # @note For first item calls {Cluster#drop_infobase} with real
+        # @note For first item calls {Cluster#drop_infobase!} with real
         #   +mode+ and uses mode == :alive_db for all other.
         #   Otherwise when mode == :destroy_db raises error
         #   "Не найдена база данных * в SQL-сервере *"
-        # @param mode (see Cluster#drop_infobase)
-        def drop_infobase(mode)
+        # @param mode (see Cluster#drop_infobase!)
+        def drop_infobase!(mode)
           clusters.each_with_index do |cl, index|
-            cl.drop_infobase(self, (index == 0 ? mode : :alive_db))
+            cl.drop_infobase!(self, (index == 0 ? mode : :alive_db))
           end
         end
       end

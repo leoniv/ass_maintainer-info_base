@@ -65,9 +65,30 @@ module AssMaintainer::InfoBaseTest
         # And play with instance
         ib.exists?.must_equal false
         ib.make # make empty file infobase
+
         ib.exists?.must_equal true
-        ib.rm! :yes # remove infobase
-        ib.exists?.must_equal false
+
+        # Open session with infobase
+        designer = ib.designer
+        designer.run
+
+        sleep 3 # wait while designer raising
+
+        begin
+          # Session alive and rm! should fall
+          e = proc {
+            ib.rm! :yes # remove infobase
+          }.must_raise Errno::ENOTEMPTY
+
+          # Kill session
+          designer.process_holder.kill
+
+          # Session killed and rm! shouldn't fall
+          ib.rm! :yes # remove infobase
+          ib.exists?.must_equal false
+        ensure
+          designer.process_holder.kill if designer
+        end
       end
     end
 
@@ -150,8 +171,28 @@ module AssMaintainer::InfoBaseTest
 
         ib.make # make empty file ib
         ib.exists?.must_equal true
-        ib.rm! :yes # remove ib
-        ib.exists?.must_equal false
+
+        require 'pry'
+        binding.pry
+
+        # Open sessin with infobase
+        thick = ib.ole(:thick)
+        thick.__open__ ib.connection_string
+
+        require 'pry'
+        binding.pry
+
+        begin
+          ib.sessions.map {|i| i.AppID}.must_include('1CV8')
+
+          # All sessions will be dropped and infobase will be removed
+          ib.rm! :yes # remove ib
+          ib.exists?.must_equal false
+        ensure
+        require 'pry'
+        binding.pry
+          thick.__close__ if thick
+        end
       end
     end
   end
