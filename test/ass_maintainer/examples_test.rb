@@ -237,9 +237,6 @@ module AssMaintainer::InfoBaseTest
 
           # FIXME
 
-          require 'pry'
-          binding.pry
-
           ib.locked?.must_equal false
           ib.locked_we?.must_equal false
 
