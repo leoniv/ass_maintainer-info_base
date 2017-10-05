@@ -14,6 +14,10 @@ module AssMaintainer::InfoBaseTest
     PORT = '11540'
     REGPORT = '11541'
     RANGE = '11560:11591'
+    RAGENT_ADMIN = 'ragent'
+    RAGENT_PASS = '0000'
+    RMNGR_ADMIN = 'rmngr'
+    RMNGR_PASS = '1111'
 
     class Ragent
       BIN = 'ragent.exe'
@@ -79,6 +83,56 @@ module AssMaintainer::InfoBaseTest
         fail "`#{BIN}' v#{version} isn't instaled!" unless exists?
         Process.spawn "\"#{cmd}\" #{args.join(' ')}"
         sleep(3)
+        make_admins
+      end
+
+      def runtime_new
+        Module.new do
+          is_ole_runtime :agent
+        end
+      end
+
+      def run_ole_runtime
+        require 'ass_ole'
+        self.class.like_ole_runtime runtime_new
+        ole_runtime_get.run "localhost:#{port}", platform_require
+      end
+
+      def make_admins
+        run_ole_runtime
+        make_rmngr_admin
+        make_ragent_admin
+      end
+
+      def make_ragent_admin
+        authenticateAgent('', '')
+        regAgentAdmin ragent_admin_get
+      end
+
+      def ragent_admin_get
+        ai = createClusterAdminInfo
+        ai.Name = RAGENT_ADMIN
+        ai.Password = RAGENT_PASS
+        ai.PasswordAuthAllowed = true
+        ai
+      end
+
+      def make_rmngr_admin
+        cl = cluster_get
+        Authenticate(cl, '', '')
+        regClusterAdmin(cl, cluster_admin_get)
+      end
+
+      def cluster_get
+        getClusters[0]
+      end
+
+      def cluster_admin_get
+        ai = createClusterAdminInfo
+        ai.Name = RMNGR_ADMIN
+        ai.Password = RMNGR_PASS
+        ai.PasswordAuthAllowed = true
+        ai
       end
     end
 
@@ -132,8 +186,8 @@ module AssMaintainer::InfoBaseTest
 
       def success_mess
         "for pass ESRV_ENV to test execute:\n"\
-        "export ESRV_ENV=\"--ragent #{ra.host}:#{ra.port} \\\n"\
-        "  --rmngr #{rmngr_host}:#{ra.regport} \\\n"\
+        "export ESRV_ENV=\"--ragent #{Server::RAGENT_ADMIN}:#{Server::RAGENT_PASS}@#{ra.host}:#{ra.port} \\\n"\
+        "  --rmngr #{Server::RMNGR_ADMIN}:#{Server::RMNGR_PASS}@#{rmngr_host}:#{ra.regport} \\\n"\
         "  --dbms YOUR_DBMS \\\n"\
         "  --dbsrv user:pass@your_dbms_host:port\""
       end
