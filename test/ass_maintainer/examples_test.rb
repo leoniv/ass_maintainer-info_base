@@ -169,18 +169,12 @@ module AssMaintainer::InfoBaseTest
         ib.connection_string.dbpwd  = env_parser.dbsrv_pwd # optional DBMS user password
         ib.connection_string.db     = cs.ref # optional. Default uses #ref value of connection string
 
-        ib.make # make empty file ib
+        ib.make # make empty server ib
         ib.exists?.must_equal true
 
-        require 'pry'
-        binding.pry
-
-        # Open sessin with infobase
+        # Open session with infobase
         thick = ib.ole(:thick)
         thick.__open__ ib.connection_string
-
-        require 'pry'
-        binding.pry
 
         begin
           ib.sessions.map {|i| i.AppID}.must_include('1CV8')
@@ -189,8 +183,6 @@ module AssMaintainer::InfoBaseTest
           ib.rm! :yes # remove ib
           ib.exists?.must_equal false
         ensure
-        require 'pry'
-        binding.pry
           thick.__close__ if thick
         end
       end

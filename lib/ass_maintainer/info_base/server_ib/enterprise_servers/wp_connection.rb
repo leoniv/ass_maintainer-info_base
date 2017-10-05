@@ -16,6 +16,7 @@ module AssMaintainer
 
           include Support::OleRuntime
           include Support::InfoBaseFind
+          include Support::Reconnect
 
           # Make new object of anonymous class which included this module.
           # @param wp_info (see #initialize)
@@ -66,11 +67,6 @@ module AssMaintainer
           def connect(infobase_wrapper)
             @infobase_wrapper = infobase_wrapper
             _connect host_port, sagent.platform_require
-          end
-
-          def reconnect
-            ole_connector.__close__
-            ole_connector.__open__ host_port
           end
 
           def ib_ref
@@ -182,8 +178,14 @@ module AssMaintainer
           end
 
           def infobases
-            GetInfoBases()
+            reconnect
+            getInfoBases
           end
+
+          def _reconnect_required?
+            getInfoBases.empty?
+          end
+          private :reconnect_required?
         end
       end
     end

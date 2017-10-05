@@ -90,6 +90,32 @@ module AssMaintainer
               !infobase_find(ib_name).nil?
             end
           end
+
+          module Reconnect
+            def reconnect
+              fail "Serevice #{host_port} not"\
+                " available: #{tcp_ping.exception}" unless ping?
+              return unless reconnect_required?
+              ole_connector.__close__
+              ole_connector.__open__ host_port
+            end
+            private :reconnect
+
+            def reconnect_required?
+              return true unless ole_connector.__opened__?
+              begin
+                _reconnect_required?
+              rescue WIN32OLERuntimeError => e
+                return true if e.message =~ %r{descr=10054}
+              end
+            end
+            private :reconnect_required?
+
+            def _reconnect_required?
+              fail 'Abstract method'
+            end
+            private :_reconnect_required?
+          end
         end
 
         # Mixins for serever connection describers {Cluster} {ServerAgent}
@@ -181,6 +207,7 @@ module AssMaintainer
         module ServerAgent
           include ServerConnection
           include Support::OleRuntime
+          include Support::Reconnect
 
           # Make new object of anonymous class which included this module.
           def self.new(host_port, user, password)
@@ -229,6 +256,7 @@ module AssMaintainer
           # @return [nil WIN32OLE] +IClusterInfo+ ole object
           # @raise if not connected
           def cluster_find(host, port)
+            reconnect
             GetClusters().find do |cl|
               cl.HostName.upcase == host.upcase && cl.MainPort == port.to_i
             end
@@ -240,10 +268,10 @@ module AssMaintainer
             ole_connector.send(:__ole_binary__).requirement.to_s
           end
 
-          def reconnect
-            ole_connector.__close__
-            ole_connector.__open__ host_port
+          def _reconnect_required?
+            getClusters.empty?
           end
+          private :_reconnect_required?
         end
 
         require 'ass_maintainer/info_base/server_ib/enterprise_servers/wp_connection'
