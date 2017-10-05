@@ -77,13 +77,13 @@ module AssMaintainer::InfoBaseTest
         'localhost'
       end
 
-      def run(srvinfo)
+      def run(srvinfo, make_admins_)
         @srvinfo = srvinfo
         fail "service on the tcp port `#{port}' is already running" if running?
         fail "`#{BIN}' v#{version} isn't instaled!" unless exists?
         Process.spawn "\"#{cmd}\" #{args.join(' ')}"
         sleep(3)
-        make_admins
+        make_admins if make_admins_
       end
 
       def runtime_new
@@ -184,17 +184,25 @@ module AssMaintainer::InfoBaseTest
         `hostname`.strip
       end
 
+      def ragent_usr
+        "#{Server::RAGENT_ADMIN}:#{Server::RAGENT_PASS}@" if make_admins?
+      end
+
+      def rmngr_usr
+        "#{Server::RMNGR_ADMIN}:#{Server::RMNGR_PASS}@" if make_admins?
+      end
+
       def success_mess
         "for pass ESRV_ENV to test execute:\n"\
-        "export ESRV_ENV=\"--ragent #{Server::RAGENT_ADMIN}:#{Server::RAGENT_PASS}@#{ra.host}:#{ra.port} \\\n"\
-        "  --rmngr #{Server::RMNGR_ADMIN}:#{Server::RMNGR_PASS}@#{rmngr_host}:#{ra.regport} \\\n"\
+        "export ESRV_ENV=\"--ragent #{ragent_usr}#{ra.host}:#{ra.port} \\\n"\
+        "  --rmngr #{rmngr_usr}#{rmngr_host}:#{ra.regport} \\\n"\
         "  --dbms YOUR_DBMS \\\n"\
         "  --dbsrv user:pass@your_dbms_host:port\""
       end
 
       def execute
         signal_usage_error 'Run in cygwin or windows only!' if Helper.linux?
-        ragent.run(srvinfo_get)
+        ragent.run(srvinfo_get, make_admins?)
         puts success_mess
       rescue RuntimeError => e
         raise Clamp::ExecutionError.new(e.message, '', 1)
@@ -224,6 +232,8 @@ module AssMaintainer::InfoBaseTest
         $stderr.puts netstat.join("\n")
         exit 0
       end
+
+      option '--[no-]make-admins', :flag, 'default admins for ragent.exe and rmngr.exe will be maked'
     end
   end
 end
