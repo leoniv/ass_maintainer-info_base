@@ -323,6 +323,12 @@ module AssMaintainer::InfoBaseTest
       end.must_equal :command
       zonde[:called].must_equal true
     end
+
+    it 'AssMaintainer::InfoBase include Interfaces::InfoBaseWrapper' do
+      AssMaintainer::InfoBase
+        .include?(AssMaintainer::InfoBase::Interfaces::InfoBaseWrapper)
+        .must_equal true
+    end
   end
 
   describe AssMaintainer::InfoBase do
@@ -592,15 +598,6 @@ module AssMaintainer::InfoBaseTest
   describe AssMaintainer::InfoBase::ServerIb::InfoBaseWrapper do
     def new_wrapper(infobase = nil)
       self.class.desc.new infobase
-    end
-
-    AssMaintainer::InfoBase::Interfaces::InfoBaseWrapper
-      .instance_methods.each do |m|
-      it "#{m} not implemented" do
-        proc {
-          new_wrapper.send m
-        }.must_raise NotImplementedError
-      end
     end
 
     it '#exists? not implemented' do
