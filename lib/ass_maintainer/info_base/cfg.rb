@@ -1,16 +1,18 @@
 module AssMaintainer
   class InfoBase
-    # @abstract
-    class AbstractCfg
-      attr_reader :infobase
-      # @param infobase [InfoBase]
-      def initialize(infobase)
-        @infobase = infobase
+    module Abstract
+      # @abstract
+      class Cfg
+        attr_reader :infobase
+        # @param infobase [InfoBase]
+        def initialize(infobase)
+          @infobase = infobase
+        end
       end
     end
 
     # Object for manipuate whith infobase configuration
-    class Cfg < AbstractCfg
+    class Cfg < Abstract::Cfg
       # Dump configuration to +XML+ files
       # @param path [String]
       # @return [String] path
@@ -55,7 +57,7 @@ module AssMaintainer
     end
 
     # Object for manipuate whith database configuration
-    class DbCfg < AbstractCfg
+    class DbCfg < Abstract::Cfg
       # Update database configuration from infobase
       # configuration
       def update

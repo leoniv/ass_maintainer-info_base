@@ -84,6 +84,7 @@ module AssMaintainer
 
     # Define abstract classes
     module Abstract
+      # @abstract
       class InfoBaseWrapper
         include Interfaces::InfoBaseWrapper
         attr_accessor :infobase
