@@ -73,14 +73,7 @@ module AssMaintainer
       # Wrapper for manipulate
       # with real information base deployed in 1C:Enterprise server
       # ower the 1C Ole classes
-      class InfoBaseWrapper
-        include Interfaces::InfoBaseWrapper
-        attr_accessor :infobase
-        alias_method :ib, :infobase
-
-        def initialize(infobase)
-          self.infobase = infobase
-        end
+      class InfoBaseWrapper < Abstract::InfoBaseWrapper
 
         # @return [EnterpriseServers::ServerAgent]
         def sagent_get

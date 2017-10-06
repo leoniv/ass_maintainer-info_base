@@ -32,13 +32,7 @@ module AssMaintainer
       end
 
       # (see Interfaces::InfoBaseWrapper)
-      class InfoBaseWrapper
-        include Interfaces::InfoBaseWrapper
-        attr_accessor :infobase
-        alias_method :ib, :infobase
-        def initialize(infobase)
-          self.infobase = infobase
-        end
+      class InfoBaseWrapper < Abstract::InfoBaseWrapper
 
         # (see Interfaces::InfoBaseWrapper#sessions)
         def sessions
