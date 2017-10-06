@@ -2,7 +2,8 @@ module AssMaintainer
   class InfoBase
     # Mixins for infobase deployed on 1C:Eneterprise server
     module ServerIb
-      require 'ass_maintainer/info_base/server_ib/helpers'
+      require 'ass_maintainer/info_base/server_ib/enterprise_servers'
+      require 'ass_maintainer/info_base/server_ib/infobase_wrapper'
       # Defauld destroyer for serever infobase
       class ServerBaseDestroyer
 
