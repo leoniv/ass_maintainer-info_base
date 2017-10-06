@@ -3,6 +3,8 @@ module AssMaintainer
     # Mixins for infobase deployed on 1C:Eneterprise server
     module ServerIb
       require 'ass_maintainer/info_base/server_ib/enterprise_servers'
+
+      # @api private
       # Defauld destroyer for serever infobase
       class ServerBaseDestroyer
 
@@ -15,6 +17,7 @@ module AssMaintainer
         end
       end
 
+      # @api private
       # Serever infobase maker
       class ServerBaseMaker < InfoBase::DefaultMaker
         REQUIRE_FIELDS = [:dbsrvr, :dbuid, :dbms]
@@ -41,11 +44,6 @@ module AssMaintainer
         options[:maker] || ServerBaseMaker.new
       end
       private :maker
-
-      # True if infobase exists
-      def exists?
-        infobase_wrapper.exists?
-      end
 
       def destroyer
         options[:destroyer] || ServerBaseDestroyer.new

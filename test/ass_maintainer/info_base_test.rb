@@ -663,7 +663,7 @@ module AssMaintainer::InfoBaseTest
   describe AssMaintainer::InfoBase::ServerIb::EnterpriseServers::Support::ServerConnection do
     before do
       @inst = Class.new do
-        include AssMaintainer::InfoBase::ServerIb::EnterpriseServers::ServerConnection
+        include AssMaintainer::InfoBase::ServerIb::EnterpriseServers::Support::ServerConnection
       end.new 'fake_host:fake_port', 'user_name', 'password'
     end
 

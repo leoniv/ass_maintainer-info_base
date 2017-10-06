@@ -74,6 +74,11 @@ module AssMaintainer
         def locked_we?
           fail NotImplementedError
         end
+
+        # True if infobase exists
+        def exists?
+          fail NotImplementedError
+        end
       end
     end
   end

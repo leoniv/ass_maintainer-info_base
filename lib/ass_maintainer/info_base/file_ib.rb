@@ -10,11 +10,6 @@ module AssMaintainer
         end
       end
 
-      # True if infobase exists
-      def exists?
-        File.file?("#{connection_string.path}/1Cv8.1CD")
-      end
-
       def maker
         options[:maker] || InfoBase::DefaultMaker.new
       end
@@ -40,6 +35,7 @@ module AssMaintainer
       class InfoBaseWrapper
         include Interfaces::InfoBaseWrapper
         attr_accessor :infobase
+        alias_method :ib, :infobase
         def initialize(infobase)
           self.infobase = infobase
         end
@@ -69,6 +65,11 @@ module AssMaintainer
         # (see Interfaces::InfoBaseWrapper#locked_we?)
         def locked_we?
           false
+        end
+
+        # True if infobase exists
+        def exists?
+          File.file?("#{ib.connection_string.path}/1Cv8.1CD")
         end
       end
     end
