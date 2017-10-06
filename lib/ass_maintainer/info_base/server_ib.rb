@@ -64,34 +64,10 @@ module AssMaintainer
       private :destroyer
 
       # @api private
-      # Array of defined in +#connection_string.srvr+
-      # 1C:Eneterprise clusters
-      # @return [Array<EnterpriseServers::Cluster>]
-      def clusters
-        fail NotImplementedError,
-            'Multiple servers deployments not supported' if\
-            connection_string.servers.size > 1
-
-        @clusters ||= connection_string.servers.map do |s|
-          EnterpriseServers::Cluster
-            .new("#{s.host}:#{s.port}", cluster_usr, cluster_pwd)
-        end.uniq {|cl| [cl.host.upcase, cl.port.upcase]}
-      end
-
-      # @api private
       # @return {InfoBaseWrapper}
       def infobase_wrapper
         @infobase_wrapper ||= InfoBaseWrapper.new(self)
       end
-
-      def set_db_fields(dbsrvr, dbuid, dbpwd, dbms)
-        connection_string.dbsrvr = dbsrvr
-        connection_string.dbuid = dbuid
-        connection_string.dbpwd = dbpwd
-        connection_string.dbms = dbms
-        nil
-      end
-      private :set_db_fields
 
       # @api private
       # Wrapper for manipulate
@@ -120,10 +96,32 @@ module AssMaintainer
           @sagent ||= sagent_get.connect(infobase.platform_require)
         end
 
+        def cs_servers
+          ib.connection_string.servers.uniq {|s| [s.host.upcase, s.port.upcase]}
+        end
+        private :cs_servers
+
+        def cs_clusters
+          cs_servers.map do |s|
+            EnterpriseServers::Cluster
+              .new("#{s.host}:#{s.port}", ib.cluster_usr, ib.cluster_pwd)
+          end
+        end
+        private :cs_clusters
+
+        def fail_multiple_servers_not_support
+          fail NotImplementedError,
+              'Multiple servers deployments not supported' if\
+              cs_servers.size > 1
+        end
+        private :fail_multiple_servers_not_support
+
         # @return [Array<EnterpriseServers::Cluster>] clusters defined in
         # +#infobase.clusters+ attached into {#sagent}
+        # @raise [RuntimeError] unsupport multiple servers infobase deployments
         def clusters
-          infobase.clusters.select do |cl|
+          fail_multiple_servers_not_support
+          cs_clusters.select do |cl|
             cl.attach(sagent).infobase_include? ib_ref
           end
         end
