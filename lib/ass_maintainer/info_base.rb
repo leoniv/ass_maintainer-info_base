@@ -292,11 +292,6 @@ module AssMaintainer
       @cfg ||= Cfg.new(self) if exists?
     end
 
-    require 'forwardable'
-    extend Forwardable
-    def_delegators :infobase_wrapper,
-                   *Interfaces::InfoBaseWrapper.instance_methods
-
     # Returns type of infobase
     # @return [Symbol] +:file+ or +:server+
     def is
@@ -346,6 +341,8 @@ module AssMaintainer
       connection_string.pwd
     end
     alias_method :password, :pwd
+
+    include Interfaces::InfoBaseWrapper
   end
   # rubocop:enable Metrics/ClassLength
 end

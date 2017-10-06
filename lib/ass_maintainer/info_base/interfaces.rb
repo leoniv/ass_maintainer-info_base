@@ -81,18 +81,5 @@ module AssMaintainer
         end
       end
     end
-
-    # Define abstract classes
-    module Abstract
-      # @abstract
-      class InfoBaseWrapper
-        include Interfaces::InfoBaseWrapper
-        attr_accessor :infobase
-        alias_method :ib, :infobase
-        def initialize(infobase)
-          self.infobase = infobase
-        end
-      end
-    end
   end
 end

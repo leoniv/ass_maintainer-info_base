@@ -20,51 +20,36 @@ module AssMaintainer
       end
       private :destroyer
 
-      # Connection string fore createinfobase
-      def make_connection_string
-        connection_string
+      # (see Interfaces::InfoBaseWrapper#sessions)
+      def sessions
+        []
       end
 
-      # Dummy infobase wrupper
-      # @return [InfoBaseWrapper]
-      def infobase_wrapper
-        @infobase_wrapper = InfoBaseWrapper.new(self)
+      # (see Interfaces::InfoBaseWrapper#lock)
+      def lock(*_)
       end
 
-      # (see Interfaces::InfoBaseWrapper)
-      class InfoBaseWrapper < Abstract::InfoBaseWrapper
+      # (see Interfaces::InfoBaseWrapper#unlock)
+      def unlock
+      end
 
-        # (see Interfaces::InfoBaseWrapper#sessions)
-        def sessions
-          []
-        end
+      # (see Interfaces::InfoBaseWrapper#unlock!)
+      def unlock!
+      end
 
-        # (see Interfaces::InfoBaseWrapper#lock)
-        def lock(*_)
-        end
+      # (see Interfaces::InfoBaseWrapper#locked?)
+      def locked?
+        false
+      end
 
-        # (see Interfaces::InfoBaseWrapper#unlock)
-        def unlock
-        end
+      # (see Interfaces::InfoBaseWrapper#locked_we?)
+      def locked_we?
+        false
+      end
 
-        # (see Interfaces::InfoBaseWrapper#unlock!)
-        def unlock!
-        end
-
-        # (see Interfaces::InfoBaseWrapper#locked?)
-        def locked?
-          false
-        end
-
-        # (see Interfaces::InfoBaseWrapper#locked_we?)
-        def locked_we?
-          false
-        end
-
-        # True if infobase exists
-        def exists?
-          File.file?("#{ib.connection_string.path}/1Cv8.1CD")
-        end
+      # (see Interfaces::InfoBaseWrapper#locked_we?)
+      def exists?
+        File.file?("#{connection_string.path}/1Cv8.1CD")
       end
     end
   end

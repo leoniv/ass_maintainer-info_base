@@ -13,7 +13,7 @@ module AssMaintainer
 
         include Interfaces::IbDestroyer
         def entry_point
-          infobase.infobase_wrapper.drop_infobase!(DROP_MODE)
+          infobase.send(:infobase_wrapper).drop_infobase!(DROP_MODE)
         end
       end
 
@@ -63,17 +63,27 @@ module AssMaintainer
       end
       private :destroyer
 
-      # @api private
       # @return {InfoBaseWrapper}
       def infobase_wrapper
         @infobase_wrapper ||= InfoBaseWrapper.new(self)
       end
+      private :infobase_wrapper
+
+      require 'forwardable'
+      extend Forwardable
+      def_delegators :infobase_wrapper, *Interfaces::InfoBaseWrapper
+        .instance_methods
 
       # @api private
       # Wrapper for manipulate
       # with real information base deployed in 1C:Enterprise server
       # ower the 1C Ole classes
-      class InfoBaseWrapper < Abstract::InfoBaseWrapper
+      class InfoBaseWrapper
+        attr_accessor :infobase
+        alias_method :ib, :infobase
+        def initialize(infobase)
+          self.infobase = infobase
+        end
 
         # @return [EnterpriseServers::ServerAgent]
         def sagent_get

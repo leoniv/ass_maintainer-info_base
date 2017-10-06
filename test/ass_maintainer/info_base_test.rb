@@ -7,7 +7,7 @@ module AssMaintainer::InfoBaseTest
     end
   end
 
-  module CommonInfobase
+  module CommonInfobaseTests
     extend Minitest::Spec::DSL
 
     it '#add_hook raises' do
@@ -64,7 +64,7 @@ module AssMaintainer::InfoBaseTest
     end
 
     it '#maker' do
-      ib.send(:maker).must_be_instance_of AssMaintainer::InfoBase::DefaultMaker
+      ib.send(:maker).must_be_instance_of @maker_class
       ib.options[:maker] = :fake_maiker
       ib.send(:maker).must_equal :fake_maiker
     end
@@ -323,27 +323,6 @@ module AssMaintainer::InfoBaseTest
       end.must_equal :command
       zonde[:called].must_equal true
     end
-
-    it 'InfoBase must include suitable module' do
-      ib.singleton_class.include?(@type_module).must_equal true
-    end
-
-    it "#infobase_wrapper" do
-      ib.infobase_wrapper.must_be_instance_of\
-        @type_module::InfoBaseWrapper
-    end
-  end
-
-  module ForwardingServerWrapperMethods
-    extend Minitest::Spec::DSL
-    AssMaintainer::InfoBase::Interfaces::InfoBaseWrapper.instance_methods.each do |m|
-      it "#{m} must be forwarded to #infobase_wrapper" do
-        infobase_wrapper = mock
-        infobase_wrapper.expects(m)
-        ib.expects(:infobase_wrapper).returns(infobase_wrapper)
-        ib.send(m)
-      end
-    end
   end
 
   describe AssMaintainer::InfoBase do
@@ -437,13 +416,12 @@ module AssMaintainer::InfoBaseTest
     end
 
     describe 'as :server type' do
-      include CommonInfobase
-      include ForwardingServerWrapperMethods
+      include CommonInfobaseTests
       attr_reader :ib
       before do
-        @type_module = AssMaintainer::InfoBase::ServerIb
         @cs_class = AssLauncher::Support::ConnectionString::Server
         @destroyer_class = AssMaintainer::InfoBase::ServerIb::ServerBaseDestroyer
+        @maker_class = AssMaintainer::InfoBase::ServerIb::ServerBaseMaker
         @ib = AssMaintainer::InfoBase.new('srv_tmp', Tmp::SRV_IB_CS, false)
         # FIXME: ib.rm! :yes
       end
@@ -459,22 +437,31 @@ module AssMaintainer::InfoBaseTest
         ib.expects(:infobase_wrapper).returns(ib_wrapper)
         ib.exists?.must_equal :i_dont_know
       end
+
+      it 'instance must extended by InfoBase::ServerIb' do
+        ib.singleton_class
+          .include?(AssMaintainer::InfoBase::ServerIb).must_equal true
+      end
+
+      AssMaintainer::InfoBase::Interfaces::InfoBaseWrapper.instance_methods.each do |m|
+        it "#{m} must be forwarded to #infobase_wrapper" do
+          infobase_wrapper = mock
+          infobase_wrapper.expects(m)
+          ib.expects(:infobase_wrapper).returns(infobase_wrapper)
+          ib.send(m)
+        end
+      end
     end
 
     describe 'as :file type' do
       attr_reader :ib
-      include CommonInfobase
-      include ForwardingServerWrapperMethods
+      include CommonInfobaseTests
       before do
-        @type_module = AssMaintainer::InfoBase::FileIb
         @cs_class = AssLauncher::Support::ConnectionString::File
         @destroyer_class = AssMaintainer::InfoBase::FileIb::FileBaseDestroyer
+        @maker_class = AssMaintainer::InfoBase::DefaultMaker
         @ib = AssMaintainer::InfoBase.new('tmp', Tmp::FILE_IB_CS, false)
         @ib.rm! :yes if ib.exists?
-      end
-
-      it '#make_connection_string' do
-        ib.make_connection_string.must_equal ib.connection_string
       end
 
       it '#exists?' do
@@ -482,6 +469,11 @@ module AssMaintainer::InfoBaseTest
           .with(File.join(ib.connection_string.path,'1Cv8.1CD'))
           .returns(:may_be_exists)
         ib.exists?.must_equal :may_be_exists
+      end
+
+      it 'instance must extended by InfoBase::FileIb' do
+        ib.singleton_class
+          .include?(AssMaintainer::InfoBase::FileIb).must_equal true
       end
     end
 
@@ -535,34 +527,32 @@ module AssMaintainer::InfoBaseTest
     end
   end
 
-  describe AssMaintainer::InfoBase::FileIb::InfoBaseWrapper do
-    attr_reader :wrapper
+  describe AssMaintainer::InfoBase::FileIb do
+    attr_reader :file_ib
     before do
-      @wrapper = self.class.desc.new(:infobase)
-    end
-
-    it '#infobase' do
-      wrapper.infobase.must_equal :infobase
+      @file_ib = Class.new do
+        include AssMaintainer::InfoBase::FileIb
+      end.new
     end
 
     do_nothing_methods = [:lock, :unlock, :unlock!]
 
     do_nothing_methods.each do |m|
       it "#{m} do nothing" do
-        assert_nil wrapper.send m
+        assert_nil file_ib.send m
       end
     end
 
     it '#sessions always returns empty array' do
-      wrapper.sessions.must_equal []
+      file_ib.sessions.must_equal []
     end
 
     it '#locked always false' do
-      wrapper.locked?.must_equal false
+      file_ib.locked?.must_equal false
     end
 
     it '#locked_we? always false' do
-      wrapper.locked_we?.must_equal false
+      file_ib.locked_we?.must_equal false
     end
   end
 
@@ -575,6 +565,18 @@ module AssMaintainer::InfoBaseTest
       FileUtils.expects(:rm_r).with('fake_path_to_infobase')
       destroyer = self.class.desc.new
       destroyer.execute(infobase)
+    end
+  end
+
+  describe AssMaintainer::InfoBase::DefaultMaker do
+    it 'FIXME' do
+      fail 'FIXME'
+    end
+  end
+
+  describe AssMaintainer::InfoBase::ServerIb::ServerBaseMaker do
+    it 'FIXME' do
+      fail 'FIXME'
     end
   end
 
