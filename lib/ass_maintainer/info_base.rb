@@ -64,9 +64,7 @@ module AssMaintainer
     # - +:sagent_usr+ Admin for 1C:Enterprise server agent
     # - +:sagent_pwd+ Admin password for 1C:Enterprise server agent
     # - +:cluster_usr+ Admin for 1C:Enterprise cluster.
-    #   See {ServerIb#cluster_usr}
     # - +:cluster_pwd+ Pasword Admin for 1C:Enterprise cluster.
-    #   See {ServerIb#cluster_pwd}
     # - +:unlock_code+ Code for connect to locked infobase aka "/UC" parameter
     ARGUMENTS = {
       platform_require: nil,

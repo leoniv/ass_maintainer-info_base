@@ -1,6 +1,6 @@
 module AssMaintainer
   class InfoBase
-    # Riseses when infobase already locked and {InfoBase#unlock_code}
+    # Riseses when infobase already locked and +InfoBase#unlock_code+
     # does not macth +PermissionCode+ on serever
     class UnlockError < StandardError; end
 
@@ -55,9 +55,11 @@ module AssMaintainer
         # @note It must work for server infobase only.
         #  For file infobase it must do nothing
         # Soft locking infobase if it possible. For force locking infobase,
-        # before do force unlocking #{unlock!}
+        # before do force unlocking {#unlock!}.
+        # It set +InfoBase#unlock_code+
         # @raise [LockError] unless locking possible
-        def lock(from: Time.now, to: Time.now + 3600, message: '')
+        # @raise [ArgumentError] when +InfoBase#unlock_code+ empty
+        def lock(from: Time.now, to: Time.now + 3600, unlock_code: '', message: '')
           fail NotImplementedError
         end
 
