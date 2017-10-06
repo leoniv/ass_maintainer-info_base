@@ -53,7 +53,7 @@ module AssMaintainer
         end
 
         # @note It must work for server infobase only.
-        #  For file infobase it mast do nothing
+        #  For file infobase it must do nothing
         # Soft locking infobase if it possible. For force locking infobase,
         # before do force unlocking #{unlock!}
         # @raise [LockError] unless locking possible
