@@ -238,18 +238,15 @@ module AssMaintainer::InfoBaseTest
           # FIXME
 
           ib.locked?.must_equal false
-          ib.locked_we?.must_equal false
 
           ib.lock.must_be_nil
 
           ib.locked?.must_equal false
-          ib.locked_we?.must_equal false
 
           ib.unlock.must_be_nil
           ib.unlock!.must_be_nil
 
           ib.locked?.must_equal false
-          ib.locked_we?.must_equal false
           raise 'FIXME'
         end
 
@@ -260,14 +257,6 @@ module AssMaintainer::InfoBaseTest
               example_ib.lock(from: Time.now, to: Time.now + 1)
             }.must_raise RuntimeError
             e.message.must_match %r{#unlock_code is required}
-          end
-
-          it 'unless #locked_we?' do
-            example_ib.unlock_code = "unlock_code#{hash}"
-            e = proc {
-              example_ib.lock
-            }.must_raise RuntimeError
-            e.message.must_match %r{Infobase is already locked but unlocked code FIXME}
           end
         end
       end
@@ -283,23 +272,20 @@ module AssMaintainer::InfoBaseTest
       describe 'Lock unlock infobase' do
         include PrepareExample::MakeInfobaseBefore
 
-        it '#lock, #unlock, #unlock! do nothing and #locked?, #locked_we? always false' do
+        it '#lock, #unlock, #unlock! do nothing and #locked? always false' do
           # Get instance
           ib = example_ib
 
           ib.locked?.must_equal false
-          ib.locked_we?.must_equal false
 
           ib.lock.must_be_nil
 
           ib.locked?.must_equal false
-          ib.locked_we?.must_equal false
 
           ib.unlock.must_be_nil
           ib.unlock!.must_be_nil
 
           ib.locked?.must_equal false
-          ib.locked_we?.must_equal false
         end
       end
 

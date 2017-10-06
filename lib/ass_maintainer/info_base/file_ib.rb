@@ -42,14 +42,17 @@ module AssMaintainer
         false
       end
 
-      # (see Interfaces::InfoBase#locked_we?)
-      def locked_we?
-        false
-      end
-
-      # (see Interfaces::InfoBase#locked_we?)
+      # (see Interfaces::InfoBase#exists?)
       def exists?
         File.file?("#{connection_string.path}/1Cv8.1CD")
+      end
+
+      # (see Interfaces::InfoBase#lock_scjobs)
+      def lock_scjobs
+      end
+
+      # (see Interfaces::InfoBase#unlock_scjobs)
+      def unlock_scjobs
       end
     end
   end

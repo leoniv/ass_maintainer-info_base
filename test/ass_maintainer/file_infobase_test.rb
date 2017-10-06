@@ -11,7 +11,7 @@ module AssMaintainer::InfoBaseTest
       end.new
     end
 
-    do_nothing_methods = [:lock, :unlock, :unlock!]
+    do_nothing_methods = [:lock, :unlock, :unlock!, :lock_scjobs, :unlock_scjobs]
 
     do_nothing_methods.each do |m|
       it "#{m} do nothing" do
@@ -25,10 +25,6 @@ module AssMaintainer::InfoBaseTest
 
     it '#locked always false' do
       file_ib.locked?.must_equal false
-    end
-
-    it '#locked_we? always false' do
-      file_ib.locked_we?.must_equal false
     end
 
     it '#exists?' do

@@ -1,5 +1,9 @@
 module AssMaintainer
   class InfoBase
+    class Session
+      #FIXME
+    end
+
     # Mixins for infobase deployed on 1C:Eneterprise server
     module ServerIb
       require 'ass_maintainer/info_base/server_ib/enterprise_servers'
@@ -68,6 +72,11 @@ module AssMaintainer
         @infobase_wrapper ||= InfoBaseWrapper.new(self)
       end
       private :infobase_wrapper
+
+      # (see Interfaces::InfoBase#exists?)
+      def exists?
+        infobase_wrapper.clusters.size > 0
+      end
 
       # @api private
       # Wrapper for manipulate
@@ -143,21 +152,11 @@ module AssMaintainer
           end.flatten
         end
 
-        # True if infobase exists
-        def exists?
-          clusters.size > 0
-        end
-
 #FIXME        # FIXME: True if infobase locked
 #FIXME        def locked?
 #FIXME          fail 'FIXME'
 #FIXME          wp_connection.locked? ib_ref
 #FIXME        end
-
-#FIXME          # FIXME: True if infobase locked and #unlock_code equal
-#FIXME          def locked_we?
-#FIXME            fail 'FIXME'
-#FIXME          end
 
 #FIXME        # Lock infoabse
 #FIXME        # @param from [Date Time] locking from time
