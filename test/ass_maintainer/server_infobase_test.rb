@@ -4,8 +4,10 @@ module AssMaintainer::InfoBaseTest
   describe AssMaintainer::InfoBase::ServerIb do
       attr_reader :server_ib
       before do
-        @server_ib = Class.new do
-          include AssMaintainer::InfoBase::ServerIb
+        @server_ib = Class.new(AssMaintainer::InfoBase) do
+          def initialize
+            super '', 'srvr="fake_server";ref="fake_ref"'
+          end
         end.new
       end
 
