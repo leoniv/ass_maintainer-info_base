@@ -15,7 +15,7 @@ module AssMaintainer
   # - server infobase instance will be extend module {ServerIb}
   # - file infobase instance will be exten module {FileIb}
   #
-  # Both instance type inherits methods from {Interfaces::InfoBaseWrapper}
+  # Both instance type inherits methods from {Interfaces::InfoBase}
   #
   # All instances get methods wrappers for access to {#options} see
   # {.build_options_wrapper}
@@ -342,7 +342,7 @@ module AssMaintainer
     end
     alias_method :password, :pwd
 
-    include Interfaces::InfoBaseWrapper
+    include Interfaces::InfoBase
   end
   # rubocop:enable Metrics/ClassLength
 end

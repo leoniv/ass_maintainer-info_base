@@ -20,34 +20,34 @@ module AssMaintainer
       end
       private :destroyer
 
-      # (see Interfaces::InfoBaseWrapper#sessions)
+      # (see Interfaces::InfoBase#sessions)
       def sessions
         []
       end
 
-      # (see Interfaces::InfoBaseWrapper#lock)
+      # (see Interfaces::InfoBase#lock)
       def lock(*_)
       end
 
-      # (see Interfaces::InfoBaseWrapper#unlock)
+      # (see Interfaces::InfoBase#unlock)
       def unlock
       end
 
-      # (see Interfaces::InfoBaseWrapper#unlock!)
+      # (see Interfaces::InfoBase#unlock!)
       def unlock!
       end
 
-      # (see Interfaces::InfoBaseWrapper#locked?)
+      # (see Interfaces::InfoBase#locked?)
       def locked?
         false
       end
 
-      # (see Interfaces::InfoBaseWrapper#locked_we?)
+      # (see Interfaces::InfoBase#locked_we?)
       def locked_we?
         false
       end
 
-      # (see Interfaces::InfoBaseWrapper#locked_we?)
+      # (see Interfaces::InfoBase#locked_we?)
       def exists?
         File.file?("#{connection_string.path}/1Cv8.1CD")
       end

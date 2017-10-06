@@ -324,16 +324,16 @@ module AssMaintainer::InfoBaseTest
       zonde[:called].must_equal true
     end
 
-    AssMaintainer::InfoBase::Interfaces::InfoBaseWrapper.instance_methods.each do |m|
+    AssMaintainer::InfoBase::Interfaces::InfoBase.instance_methods.each do |m|
       it "##{m} must be implemented" do
         ib.must_respond_to m
         assert ib.method(m).owner.equal?(@ib_type_extension)
       end
     end
 
-    it 'AssMaintainer::InfoBase include Interfaces::InfoBaseWrapper' do
+    it 'AssMaintainer::InfoBase include Interfaces::InfoBase' do
       AssMaintainer::InfoBase
-        .include?(AssMaintainer::InfoBase::Interfaces::InfoBaseWrapper)
+        .include?(AssMaintainer::InfoBase::Interfaces::InfoBase)
         .must_equal true
     end
   end

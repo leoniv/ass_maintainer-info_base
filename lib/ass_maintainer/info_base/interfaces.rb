@@ -31,9 +31,10 @@ module AssMaintainer
         end
       end
 
-      # Interface for {FileIb::InfoBaseWrapper} and
-      # {ServerIb::InfoBaseWrapper} classes
-      module InfoBaseWrapper
+      # Common interface for different infobase types
+      # Interface must be implemented in {InfoBase::FileIb} and
+      # {InfoBase::ServerIb} modules
+      module InfoBase
         require 'date'
 
         # Returns array of infobase sessions

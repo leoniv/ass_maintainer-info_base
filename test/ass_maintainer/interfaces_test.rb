@@ -1,7 +1,7 @@
 require 'test_helper'
 
 module AssMaintainer::InfoBaseTest
-  describe AssMaintainer::InfoBase::Interfaces::InfoBaseWrapper do
+  describe AssMaintainer::InfoBase::Interfaces::InfoBase do
     include desc
     desc.instance_methods.each do |m|
       it "#{m}" do
