@@ -120,79 +120,79 @@ module AssMaintainer
             end
             private :_reconnect_required?
           end
-        end
 
-        # @api private
-        # Abstract server connection.
-        # Mixin for {Cluster} and {ServerAgent}
-        module ServerConnection
-          # Server user name
-          # See {#initialize} +user+ argument.
-          # @return [String]
-          attr_accessor :user
+          # @api private
+          # Abstract server connection.
+          # Mixin for {Cluster} and {ServerAgent}
+          module ServerConnection
+            # Server user name
+            # See {#initialize} +user+ argument.
+            # @return [String]
+            attr_accessor :user
 
-          # Server user password
-          # See {#initialize} +password+ argument.
-          # @return [String]
-          attr_accessor :password
+            # Server user password
+            # See {#initialize} +password+ argument.
+            # @return [String]
+            attr_accessor :password
 
-          # Host name
-          attr_accessor :host
+            # Host name
+            attr_accessor :host
 
-          # TCP port
-          attr_accessor :port
+            # TCP port
+            attr_accessor :port
 
-          # @param host_port [String] string like a +host_name:port_number+
-          # @param user [String] server user name
-          # @param password [String] serever user password
-          def initialize(host_port, user = nil, password = nil)
-            fail ArgumentError, 'Host name require' if host_port.to_s.empty?
-            @raw_host_port = host_port
-            @host = parse_host
-            @port = parse_port || default_port
-            @user = user
-            @password = password
+            # @param host_port [String] string like a +host_name:port_number+
+            # @param user [String] server user name
+            # @param password [String] serever user password
+            def initialize(host_port, user = nil, password = nil)
+              fail ArgumentError, 'Host name require' if host_port.to_s.empty?
+              @raw_host_port = host_port
+              @host = parse_host
+              @port = parse_port || default_port
+              @user = user
+              @password = password
+            end
+
+            # String like a +host_name:port_number+.
+            # @return [String]
+            def host_port
+              "#{host}:#{port}"
+            end
+
+            def parse_port
+              p = @raw_host_port.split(':')[1].to_s.strip
+              return p unless p.empty?
+            end
+            private :parse_port
+
+            def parse_host
+              p = @raw_host_port.split(':')[0].to_s.strip
+              fail ArgumentError, "Invalid host_name for `#{@raw_host_port}'" if\
+                p.empty?
+              p
+            end
+            private :parse_host
+
+            def default_port
+              fail 'Abstract method'
+            end
+
+            # Return +true+ if TCP port available on server
+            def ping?
+              tcp_ping.ping?
+            end
+
+            require 'net/ping/tcp'
+            # @return [Net::Ping::TCP] instance
+            def tcp_ping
+              @tcp_ping ||= Net::Ping::TCP.new(host, port)
+            end
+
+            def eql?(other)
+              host.upcase == other.host.upcase && port == other.port
+            end
+            alias_method :==, :eql?
           end
-
-          # String like a +host_name:port_number+.
-          # @return [String]
-          def host_port
-            "#{host}:#{port}"
-          end
-
-          def parse_port
-            p = @raw_host_port.split(':')[1].to_s.strip
-            return p unless p.empty?
-          end
-          private :parse_port
-
-          def parse_host
-            p = @raw_host_port.split(':')[0].to_s.strip
-            fail ArgumentError, "Invalid host_name for `#{@raw_host_port}'" if\
-              p.empty?
-            p
-          end
-          private :parse_host
-
-          def default_port
-            fail 'Abstract method'
-          end
-
-          # Return +true+ if TCP port available on server
-          def ping?
-            tcp_ping.ping?
-          end
-
-          require 'net/ping/tcp'
-          # @return [Net::Ping::TCP] instance
-          def tcp_ping
-            @tcp_ping ||= Net::Ping::TCP.new(host, port)
-          end
-
-          def eql?(other)
-            host.upcase == other.host.upcase && port == other.port
-          end
-          alias_method :==, :eql?
         end
 
         # @api private
@@ -211,7 +211,7 @@ module AssMaintainer
         #   sagent.disconnect
         #
         module ServerAgent
-          include ServerConnection
+          include Support::ServerConnection
           include Support::OleRuntime
           include Support::Reconnect
 
@@ -288,7 +288,7 @@ module AssMaintainer
           # Deafult 1C:Enterprise cluster TCP port
           DEF_PORT = '1541'
 
-          include ServerConnection
+          include Support::ServerConnection
           include Support::SendToOle
           include Support::InfoBaseFind
 

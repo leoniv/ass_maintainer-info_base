@@ -660,7 +660,7 @@ module AssMaintainer::InfoBaseTest
     end
   end
 
-  describe AssMaintainer::InfoBase::ServerIb::EnterpriseServers::ServerConnection do
+  describe AssMaintainer::InfoBase::ServerIb::EnterpriseServers::Support::ServerConnection do
     before do
       @inst = Class.new do
         include AssMaintainer::InfoBase::ServerIb::EnterpriseServers::ServerConnection
