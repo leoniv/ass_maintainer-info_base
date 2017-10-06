@@ -193,52 +193,6 @@ module AssMaintainer
     end
     private :rm_infobase!
 
-    # Returns type of infobase
-    # @return [Symbol] +:file+ or +:server+
-    def is
-      connection_string.is
-    end
-
-    # Check type of infobase
-    # @param type [Symbol] +:file+ or +:server+
-    def is?(type)
-      connection_string.is?(type)
-    end
-
-    # Set user name
-    def usr=(user_name)
-      connection_string.usr = user_name
-    end
-
-    # User name
-    # @return [String]
-    def usr
-      connection_string.usr
-    end
-
-    # Set locale
-    # @param l [String] locale code +en+, +ru+ etc
-    def locale=(l)
-      connection_string.locale = l
-    end
-
-    # Get locale
-    # @return [String]
-    def locale
-      connection_string.locale
-    end
-
-    # Set user password
-    def pwd=(password)
-      connection_string.pwd = password
-    end
-
-    # User password
-    # @return [String]
-    def pwd
-      connection_string.pwd
-    end
-
     # @return [AssLauncher::Enterprise::BinaryWrapper::ThickClient]
     def thick
       self.class.thicks(platform_require).last ||
@@ -342,6 +296,56 @@ module AssMaintainer
     extend Forwardable
     def_delegators :infobase_wrapper,
                    *Interfaces::InfoBaseWrapper.instance_methods
+
+    # Returns type of infobase
+    # @return [Symbol] +:file+ or +:server+
+    def is
+      connection_string.is
+    end
+
+    # Check type of infobase
+    # @param type [Symbol] +:file+ or +:server+
+    def is?(type)
+      connection_string.is?(type)
+    end
+
+    # Set user name
+    def usr=(user_name)
+      connection_string.usr = user_name
+    end
+    alias_method :user=, :usr=
+
+    # User name
+    # @return [String]
+    def usr
+      connection_string.usr
+    end
+    alias_method :user, :usr
+
+    # Set locale
+    # @param l [String] locale code +en+, +ru+ etc
+    def locale=(l)
+      connection_string.locale = l
+    end
+
+    # Get locale
+    # @return [String]
+    def locale
+      connection_string.locale
+    end
+
+    # Set user password
+    def pwd=(password)
+      connection_string.pwd = password
+    end
+    alias_method :password=, :pwd=
+
+    # User password
+    # @return [String]
+    def pwd
+      connection_string.pwd
+    end
+    alias_method :password, :pwd
   end
   # rubocop:enable Metrics/ClassLength
 end
