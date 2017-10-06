@@ -105,7 +105,7 @@ module AssMaintainer
     # see {#initialize} +options+
     attr_reader :options
     # InfoBase is read only
-    # destructive methods will be fail with {MethodDenied} error
+    # destructive methods fails with {MethodDenied} error
     attr_reader :read_only
     alias_method :read_only?, :read_only
 

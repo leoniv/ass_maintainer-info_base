@@ -29,7 +29,11 @@ module AssMaintainer
 
         def prepare_making
           fail "Fields #{REQUIRE_FIELDS} must be filled" unless require_filled?
-          infobase.prepare_making
+          cs = connection_string
+          set_if_empty :db, cs.ref
+          set_if_empty :crsqldb, 'Y'
+          set_if_empty :susr, infobase.cluster_usr
+          set_if_empty :spwd, infobase.cluster_pwd
         end
 
         def require_filled?
@@ -37,6 +41,15 @@ module AssMaintainer
             return false if infobase.connection_string.send(f).nil?
           end
           true
+        end
+
+        def set_if_empty(prop, value)
+          connection_string.send("#{prop}=", value) if\
+            connection_string.send(prop).to_s.empty?
+        end
+
+        def connection_string
+          infobase.connection_string
         end
       end
 
@@ -64,22 +77,6 @@ module AssMaintainer
             .new("#{s.host}:#{s.port}", cluster_usr, cluster_pwd)
         end.uniq {|cl| [cl.host.upcase, cl.port.upcase]}
       end
-
-      # @api private
-      # Prepare connection string for making server infobase
-      def prepare_making
-        cs = connection_string
-        set_if_empty :db, cs.ref
-        set_if_empty :crsqldb, 'Y'
-        set_if_empty :susr, cluster_usr
-        set_if_empty :spwd, cluster_pwd
-      end
-
-      def set_if_empty(prop, value)
-        connection_string.send("#{prop}=", value) if\
-          connection_string.send(prop).to_s.empty?
-      end
-      private :set_if_empty
 
       # @api private
       # @return {InfoBaseWrapper}
