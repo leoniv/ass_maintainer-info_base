@@ -69,11 +69,6 @@ module AssMaintainer
       end
       private :infobase_wrapper
 
-      require 'forwardable'
-      extend Forwardable
-      def_delegators :infobase_wrapper, *Interfaces::InfoBaseWrapper
-        .instance_methods
-
       # @api private
       # Wrapper for manipulate
       # with real information base deployed in 1C:Enterprise server
@@ -88,7 +83,7 @@ module AssMaintainer
         # @return [EnterpriseServers::ServerAgent]
         def sagent_get
           EnterpriseServers::ServerAgent
-            .new "#{ib.sagent_host || ib.clusters[0].host}:#{ib.sagent_port}",
+            .new "#{ib.sagent_host || cs_servers[0].host}:#{ib.sagent_port}",
                  ib.sagent_usr,
                  ib.sagent_pwd
         end
@@ -153,25 +148,25 @@ module AssMaintainer
           clusters.size > 0
         end
 
-        # FIXME: True if infobase locked
-        def locked?
-          fail 'FIXME'
-          wp_connection.locked? ib_ref
-        end
+#FIXME        # FIXME: True if infobase locked
+#FIXME        def locked?
+#FIXME          fail 'FIXME'
+#FIXME          wp_connection.locked? ib_ref
+#FIXME        end
 
-        # FIXME: True if infobase locked and #unlock_code equal
-        def locked_we?
-          fail 'FIXME'
-        end
+#FIXME          # FIXME: True if infobase locked and #unlock_code equal
+#FIXME          def locked_we?
+#FIXME            fail 'FIXME'
+#FIXME          end
 
-        # Lock infoabse
-        # @param from [Date Time] locking from time
-        # @param to [Date Time] locking until time
-        def lock(from: Time.now, to: Time.now + 3600, message: '')
-          fail '#unlock_code is required' if ib.unlock_code.to_s.empty?
-          raise 'FIXME'
-          fail NotImplementedError
-        end
+#FIXME        # Lock infoabse
+#FIXME        # @param from [Date Time] locking from time
+#FIXME        # @param to [Date Time] locking until time
+#FIXME        def lock(from: Time.now, to: Time.now + 3600, message: '')
+#FIXME          fail '#unlock_code is required' if ib.unlock_code.to_s.empty?
+#FIXME          raise 'FIXME'
+#FIXME          fail NotImplementedError
+#FIXME        end
 
         # Dlete infobase.
         # @note For first item calls {Cluster#drop_infobase!} with real

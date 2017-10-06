@@ -45,7 +45,7 @@ module AssMaintainer
 
         # Lock infobase. It work for server infobase only.
         # For file infobase it do nothing
-        def lock(*_)
+        def lock(from: Time.now, to: Time.now + 3600, message: '')
           fail NotImplementedError
         end
 
