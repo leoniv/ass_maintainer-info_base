@@ -1,6 +1,12 @@
 module AssMaintainer
   class InfoBase
     class Session
+      # AppID excluded from {Interfaces::InfoBase#sessions} array
+      # - SrvrConsole - cluster console
+      # - COMConsole - ole cluster console
+      # - OpenIDProvider - OpenID provider
+      # - RAS - administration server
+      EXCLUDE_APP_IDS = %w{SrvrConsole COMConsole OpenIDProvider RAS}
 
       # see {#initialize} +app_id+
       attr_reader :app_id
@@ -28,6 +34,7 @@ module AssMaintainer
         @app_id = app_id
         @host = host
         @user = user
+        @infobase = infobase
       end
 
       # Terminate session
@@ -118,8 +125,8 @@ module AssMaintainer
       # (see Interfaces::InfoBase#sessions)
       def sessions
         infobase_wrapper.sessions.map do |s|
-          s.to_session(self)
-        end
+          s.to_session(self) unless Session::EXCLUDE_APP_IDS.include? s.AppId
+        end.compact
       end
 
       # (see Interfaces::InfoBase#lock)

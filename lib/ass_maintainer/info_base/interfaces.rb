@@ -45,7 +45,8 @@ module AssMaintainer
         require 'date'
 
         # @note For {InfoBase::FileIb} must returns empty array
-        # Returns array of infobase sessions
+        # Returns array of infobase sessions exclude
+        # {InfoBase::Session::EXCLUDE_APP_IDS} application types
         # @return [Array <InfoBase::Session>]
         def sessions
           fail NotImplementedError

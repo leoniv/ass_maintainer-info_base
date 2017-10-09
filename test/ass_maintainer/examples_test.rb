@@ -172,12 +172,16 @@ module AssMaintainer::InfoBaseTest
         ib.make # make empty server ib
         ib.exists?.must_equal true
 
+        # Restore IB with root user
+        ib.restore! Fixtures::DT_FILE_WITH_ROOT_USER
+        ib.usr = 'root'
+
         # Open session with infobase
         thick = ib.ole(:thick)
         thick.__open__ ib.connection_string
 
         begin
-          ib.sessions.map {|i| i.AppID}.must_include('1CV8')
+          ib.sessions.map {|i| i.app_id}.must_include('1CV8')
 
           # All sessions will be dropped and infobase will be removed
           ib.rm! :yes # remove ib
@@ -212,15 +216,16 @@ module AssMaintainer::InfoBaseTest
                   spwd: env_parser.cluster_pwd)
 
 
-        @example_ib ||= AssMaintainer::InfoBase.new(
-          'instance_name', cs, false, sagent_host: env_parser.sagent_host,
-          sagent_port: env_parser.sagent_port, sagent_usr: env_parser.sagent_usr,
-          sagent_pwd: env_parser.sagent_pwd, cluster_usr: env_parser.cluster_usr,
-          cluster_pwd: env_parser.cluster_pwd).make
-
-        @example_ib.restore! Fixtures::DT_FILE_WITH_ROOT_USER
-        @example_ib.usr = 'root'
-        @example_ib
+        @example_ib ||= (
+            ib = AssMaintainer::InfoBase.new(
+            'instance_name', cs, false, sagent_host: env_parser.sagent_host,
+            sagent_port: env_parser.sagent_port, sagent_usr: env_parser.sagent_usr,
+            sagent_pwd: env_parser.sagent_pwd, cluster_usr: env_parser.cluster_usr,
+            cluster_pwd: env_parser.cluster_pwd).make
+            ib.restore! Fixtures::DT_FILE_WITH_ROOT_USER
+            ib.usr = 'root'
+            ib
+        )
       end
 
       before do
@@ -228,42 +233,105 @@ module AssMaintainer::InfoBaseTest
       end
 
       after do
-        example_ib.rm! :yes if @example_ib
+        @example_ib.rm! :yes if @example_ib
+      end
+
+      def assert_real_locked(ib, from, to, mess)
+        ii = ib.send(:infobase_wrapper).wp_connection.infobase_info
+        ii.PermissionCode.must_equal ib.unlock_code
+        ii.SessionsDenied.must_equal true
+        ii.DeniedFrom.to_s.must_equal from.to_s
+        ii.DeniedTo.to_s.must_equal to.to_s
+        ii.DeniedMessage.must_equal mess
+        ii.ScheduledJobsDenied.must_equal true
+      end
+
+      def assert_real_ulocked(ib)
+        ii = ib.send(:infobase_wrapper).wp_connection.infobase_info
+        ii.SessionsDenied.must_equal false
       end
 
       describe 'Lock unlock infobase' do
-        it 'example' do
+        it 'lock unlock example' do
           ib = example_ib
-
-          # FIXME
-
           ib.locked?.must_equal false
+          assert_real_ulocked(ib)
 
-          ib.lock.must_be_nil
+          # Open session with infobase
+          external = ib.ole(:external)
+          external.__open__ ib.connection_string
 
-          ib.locked?.must_equal false
+          # Sessions include external connection
+          ib.sessions.map {|s| s.app_id}.must_include 'COMConnection'
 
-          ib.unlock.must_be_nil
+          # Unset #unlock_code
+          ib.unlock_code = ''
+          e = proc {
+            ib.lock
+          }.must_raise AssMaintainer::InfoBase::LockError
+          e.message.must_match %r{unlock_code is required}
+
+          ib.unlock_code = 'good unlock_code'
+          from = Time.now - 10
+          to = Time.now + 10
+          mess = 'lock message'
+          ib.lock(from: from, to: to, message: mess).must_be_nil
+
+          # Ib is locked
+          ib.locked?.must_equal true
+          assert_real_locked(ib, from, to, mess)
+
+          # And all sessions terminated
+          ib.sessions.size.must_equal 0, ib.sessions.map {|s| s.app_id}.to_s
+
+          ib.unlock_code = 'bad unlock_code'
+          e = proc {
+            ib.unlock.must_be_nil
+          }.must_raise AssMaintainer::InfoBase::UnlockError
+          e.message.must_match %r{not match unlock_code: `bad unlock_code'}
+
           ib.unlock!.must_be_nil
 
           ib.locked?.must_equal false
-          raise 'FIXME'
         end
 
-        describe 'Fails' do
-          it 'if #unlock_code.to_s.empty?' do
-            example_ib.unlock_code.to_s.empty?.must_equal true
-            e = proc {
-              example_ib.lock(from: Time.now, to: Time.now + 1)
-            }.must_raise RuntimeError
-            e.message.must_match %r{#unlock_code is required}
-          end
+        it 'lock_schjobs unlock_schjobs example' do
+          ib = example_ib
+
+          ib.send(:infobase_wrapper).wp_connection.infobase_info.ScheduledJobsDenied
+            .must_equal false
+
+          ib.lock_schjobs
+
+          ib.send(:infobase_wrapper).wp_connection.infobase_info.ScheduledJobsDenied
+            .must_equal true
+
+          ib.unlock_schjobs
+
+          ib.send(:infobase_wrapper).wp_connection.infobase_info.ScheduledJobsDenied
+            .must_equal false
         end
       end
 
       describe 'Infobase sessions' do
         it 'example' do
-          raise 'FIXME'
+          ib = example_ib
+          ib.exists?.must_equal true
+
+          # Open session with infobase
+          external = ib.ole(:external)
+          external.__open__ ib.connection_string
+
+          ib.sessions.map {|s| "#{s.app_id}:#{s.user}"}.must_include 'COMConnection:root'
+
+          # Terminate all sessions
+          ib.sessions.each do |sess|
+            sess.terminated?.must_equal false
+            sess.terminate
+            sess.terminated?.must_equal true
+          end
+
+          ib.sessions.size.must_equal 0
         end
       end
     end
