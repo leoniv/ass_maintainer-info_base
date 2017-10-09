@@ -4,8 +4,7 @@ module AssMaintainer
     # does not macth +PermissionCode+ on serever
     class UnlockError < StandardError; end
 
-    # Raises when raises {UnlockError} or {Interfaces::InfoBase#sessions}
-    # returns not empty array
+    # Raises when +InfoBase#unlock_code+ not setted
     class LockError < StandardError; end
 
     # Define absract Interfaces
@@ -54,12 +53,13 @@ module AssMaintainer
 
         # @note It must work for server infobase only.
         #  For file infobase it must do nothing
-        # Soft locking infobase if it possible. For force locking infobase,
-        # before do force unlocking {#unlock!}.
-        # It set +InfoBase#unlock_code+
-        # @raise [LockError] unless locking possible
-        # @raise [ArgumentError] when +InfoBase#unlock_code+ empty
-        def lock(from: Time.now, to: Time.now + 3600, unlock_code: '', message: '')
+        # Locking infobase if it possible. Be careful it terminate all
+        # sessions! Before do it should set +InfoBase#unlock_code+!
+        # Schedule jobs will be locked to!
+        # @raise [LockError] unless +InfoBase#unlock_code+ setted
+        # @raise [UnlockError] unless soft {#unlock} possible. If catched
+        #   it, shold do force unlock {unlock!} and try againe
+        def lock(from: Time.now, to: Time.now + 3600, message: '')
           fail NotImplementedError
         end
 
@@ -90,7 +90,9 @@ module AssMaintainer
         end
 
         # @note For file infobase it must always return +false+
-        # Lock infobase. It work for server infobase only.
+        #  It work for server infobase only.
+        # Return +true+ if on server flag +SessionsDenied == true+
+        # and +PermissionCode+ setted
         def locked?
           fail NotImplementedError
         end
