@@ -47,12 +47,12 @@ module AssMaintainer
         File.file?("#{connection_string.path}/1Cv8.1CD")
       end
 
-      # (see Interfaces::InfoBase#lock_scjobs)
-      def lock_scjobs
+      # (see Interfaces::InfoBase#lock_schjobs)
+      def lock_schjobs
       end
 
-      # (see Interfaces::InfoBase#unlock_scjobs)
-      def unlock_scjobs
+      # (see Interfaces::InfoBase#unlock_schjobs)
+      def unlock_schjobs
       end
     end
   end

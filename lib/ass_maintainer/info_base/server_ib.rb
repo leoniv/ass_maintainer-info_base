@@ -127,7 +127,7 @@ module AssMaintainer
         fail LockError, '#unlock_code is required' if unlock_code.to_s.empty?
         unlock
         wp_connection.lock_sessions!(from, to, unlock_code, message)
-        lock_schjobs!
+        lock_schjobs
         sessions.each do |sess|
           sess.terminate
         end
@@ -136,7 +136,7 @@ module AssMaintainer
 
       # (see Interfaces::InfoBase#unlock)
       def unlock
-        wp_connection.raise_unless_unlock_possable UnlockError
+        wp_connection.raise_unless_unlock_possable UnlockError, unlock_code
         unlock!
         nil
       end
@@ -148,14 +148,14 @@ module AssMaintainer
         nil
       end
 
-      # (see Interfaces::InfoBase#lock_scjobs)
-      def lock_scjobs
+      # (see Interfaces::InfoBase#lock_schjobs)
+      def lock_schjobs
         wp_connection.lock_schjobs!
         nil
       end
 
-      # (see Interfaces::InfoBase#unlock_scjobs)
-      def unlock_scjobs
+      # (see Interfaces::InfoBase#unlock_schjobs)
+      def unlock_schjobs
         wp_connection.unlock_schjobs!
         nil
       end

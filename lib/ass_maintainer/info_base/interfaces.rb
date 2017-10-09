@@ -79,13 +79,13 @@ module AssMaintainer
 
         # @note (see #lock}
         # Lock schedule jobs
-        def lock_scjobs
+        def lock_schjobs
           fail NotImplementedError
         end
 
         # @note (see #lock}
         # Unlock schedule jobs
-        def unlock_scjobs
+        def unlock_schjobs
           fail NotImplementedError
         end
 

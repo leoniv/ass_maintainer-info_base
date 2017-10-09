@@ -11,7 +11,7 @@ module AssMaintainer::InfoBaseTest
       end.new
     end
 
-    do_nothing_methods = [:lock, :unlock, :unlock!, :lock_scjobs, :unlock_scjobs]
+    do_nothing_methods = [:lock, :unlock, :unlock!, :lock_schjobs, :unlock_schjobs]
 
     do_nothing_methods.each do |m|
       it "#{m} do nothing" do
