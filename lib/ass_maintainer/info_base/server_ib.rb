@@ -221,7 +221,7 @@ module AssMaintainer
 
         def fail_multiple_servers_not_support
           fail NotImplementedError,
-              'Multiple servers deployments not supported' if\
+              'Multiple clusters deployment not supported' if\
               cs_servers.size > 1
         end
         private :fail_multiple_servers_not_support

@@ -186,6 +186,20 @@ module AssMaintainer::InfoBaseTest
           thick.__close__ if thick
         end
       end
+
+      it "restriction: 'Multiple clusters deployment not supported'" do
+        cs = AssMaintainer::InfoBase.cs_srv srvr: "host1,host2", ref: 'facke_ib'
+
+        # Infobase is deployed on multiple clusters 'host1' and 'host2'
+        cs.servers.size.must_equal 2
+
+        ib = AssMaintainer::InfoBase.new('insatnce_name', cs)
+
+        e = proc {
+          ib.exists?
+        }.must_raise NotImplementedError
+        e.message.must_match %r{Multiple clusters deployment not supported}i
+      end
     end
   end
 
