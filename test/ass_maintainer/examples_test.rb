@@ -36,6 +36,66 @@ module AssMaintainer::InfoBaseTest
     end
   end
 
+  describe 'Restrictions for' do
+    describe 'Server infobase' do
+      it 'Not working in Linux' do
+        skip unless LINUX
+
+        cs = AssMaintainer::InfoBase.cs_srv srvr: "host1,host2", ref: 'facke_ib'
+
+        ib = AssMaintainer::InfoBase.new('insatnce_name', cs)
+
+        e = proc {
+          ib.exists?
+        }.must_raise NotImplementedError
+
+        e.message.must_match %{WIN32OLE undefined for this machine}
+      end
+
+      it 'Multiple clusters deployment not supported' do
+        cs = AssMaintainer::InfoBase.cs_srv srvr: "host1,host2", ref: 'facke_ib'
+
+        # Infobase is deployed on multiple clusters 'host1' and 'host2'
+        cs.servers.size.must_equal 2
+
+        ib = AssMaintainer::InfoBase.new('insatnce_name', cs)
+
+        e = proc {
+          ib.exists?
+        }.must_raise NotImplementedError
+        e.message.must_match %r{Multiple clusters deployment not supported}i
+      end
+    end
+
+    describe 'All infobase' do
+      include PrepareExample::RmInfobaseBefore
+
+      it '#ole helper not working in Linux' do
+        skip unless LINUX
+
+        ib = AssMaintainer::InfoBase.new('instance name', Tmp::FILE_IB_CS)
+
+        e = proc {
+          ib.ole :thick
+        }.must_raise NotImplementedError
+
+        e.message.must_match %{WIN32OLE undefined for this machine}
+      end
+
+      it 'in #read_only? infobases dangerous methods fails' do
+        ib = AssMaintainer::InfoBase.new('instance name', Tmp::FILE_IB_CS)
+
+        ib.read_only?.must_equal true
+
+        e = proc {
+          ib.make
+        }.must_raise AssMaintainer::InfoBase::MethodDenied
+
+        e.message.must_match %r{Infobase is read only\. Method make.+ denied!}
+      end
+    end
+  end
+
   describe 'Differences beetween Server and File types infobases' do
     describe 'File infobase' do
       it 'basic usage example' do
@@ -185,20 +245,6 @@ module AssMaintainer::InfoBaseTest
         ensure
           thick.__close__ if thick
         end
-      end
-
-      it "restriction: 'Multiple clusters deployment not supported'" do
-        cs = AssMaintainer::InfoBase.cs_srv srvr: "host1,host2", ref: 'facke_ib'
-
-        # Infobase is deployed on multiple clusters 'host1' and 'host2'
-        cs.servers.size.must_equal 2
-
-        ib = AssMaintainer::InfoBase.new('insatnce_name', cs)
-
-        e = proc {
-          ib.exists?
-        }.must_raise NotImplementedError
-        e.message.must_match %r{Multiple clusters deployment not supported}i
       end
     end
   end
