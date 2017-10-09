@@ -120,18 +120,21 @@ module AssMaintainer
       # (see Interfaces::InfoBase#lock)
       def lock(from: Time.now, to: Time.now + 3600, message: '')
         raise 'FIXME'
+#FIXME  fail '#unlock_code is required' if ib.unlock_code.to_s.empty?
         nil
       end
 
       # (see Interfaces::InfoBase#unlock)
       def unlock
         raise 'FIXME'
+        unlock!
         nil
       end
 
       # (see Interfaces::InfoBase#unlock!)
       def unlock!
-        raise 'FIXME'
+        infobase_wrapper.wp_connection.unlock_schjobs!
+        infobase_wrapper.wp_connection.unlock_sessions!
         nil
       end
 
@@ -244,15 +247,6 @@ module AssMaintainer
             cl.infobase_sessions(ib_ref)
           end.flatten
         end
-
-#FIXME        # Lock infoabse
-#FIXME        # @param from [Date Time] locking from time
-#FIXME        # @param to [Date Time] locking until time
-#FIXME        def lock(from: Time.now, to: Time.now + 3600, message: '')
-#FIXME          fail '#unlock_code is required' if ib.unlock_code.to_s.empty?
-#FIXME          raise 'FIXME'
-#FIXME          fail NotImplementedError
-#FIXME        end
 
         # Dlete infobase.
         # @note For first item calls {EnterpriseServers::Cluster#drop_infobase!}

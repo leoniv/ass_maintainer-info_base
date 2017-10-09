@@ -92,7 +92,6 @@ module AssMaintainer
         # @note For {InfoBase::FileIb} it must always return +false+
         #  It work for {InfoBase::ServerIb} only.
         # Return +true+ if on server flag +SessionsDenied == true+
-        # and +PermissionCode+ setted
         def locked?
           fail NotImplementedError
         end

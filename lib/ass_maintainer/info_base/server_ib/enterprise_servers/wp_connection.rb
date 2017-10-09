@@ -112,7 +112,7 @@ module AssMaintainer
 
           def locked?
             ii = infobase_info
-            ii.SessionsDenied && !ii.PermissionCode.to_s.empty?
+            ii.SessionsDenied
           end
 
           def connections
