@@ -15,12 +15,18 @@ module AssMaintainer::InfoBaseTest
         AssMaintainer::InfoBase::ServerIb::InfoBaseWrapper.new(ib)
       end
 
-      it '#exists?' do
-        ib_wrapper = mock
-        ib_wrapper.responds_like(infobase_wrapper_stub)
-        ib_wrapper.expects(:exists?).returns(:i_dont_know)
+      it '#exists? true' do
+        ib_wrapper = infobase_wrapper_stub
+        ib_wrapper.expects(:clusters).returns([1,2,3])
         server_ib.expects(:infobase_wrapper).returns(ib_wrapper)
-        server_ib.exists?.must_equal :i_dont_know
+        server_ib.exists?.must_equal true
+      end
+
+      it '#exists? true' do
+        ib_wrapper = infobase_wrapper_stub
+        ib_wrapper.expects(:clusters).returns([])
+        server_ib.expects(:infobase_wrapper).returns(ib_wrapper)
+        server_ib.exists?.must_equal false
       end
   end
 
@@ -84,6 +90,12 @@ module AssMaintainer::InfoBaseTest
       fake_ping.expects(:ping?).returns(:true_false)
       @inst.expects(:tcp_ping).returns(fake_ping)
       @inst.ping?.must_equal :true_false
+    end
+  end
+
+  describe AssMaintainer::InfoBase::Session do
+    it 'FIXME' do
+      skip 'FIXME'
     end
   end
 end

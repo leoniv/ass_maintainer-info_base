@@ -167,7 +167,7 @@ module AssMaintainer
 
       # (see Interfaces::InfoBase#exists?)
       def exists?
-        infobase_wrapper.clusters.size > 0
+        infobase_wrapper.exists?
       end
 
       # @api private
@@ -189,6 +189,10 @@ module AssMaintainer
                  ib.sagent_pwd
         end
         private :sagent_get
+
+        def exists?
+          clusters.size > 0
+        end
 
         # @return [AssLauncher::Enterprise::Ole::AgentConnection]
         def sagent
