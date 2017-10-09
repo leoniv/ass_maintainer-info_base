@@ -1,7 +1,44 @@
 module AssMaintainer
   class InfoBase
     class Session
-      #FIXME
+
+      # see {#initialize} +app_id+
+      attr_reader :app_id
+
+      # see {#initialize} +host+
+      attr_reader :host
+
+      # see {#initialize} +id+
+      attr_reader :id
+
+      # see {#initialize} +user+
+      attr_reader :user
+
+      # see {#initialize} +infobase+
+      attr_reader :infobase
+
+      # @api private
+      # @param id [Fixnum] sessions id
+      # @param app_id [String] client application id
+      # @param host [String] client host name
+      # @param user [Strin] infobase user
+      # @param infobase [InfoBase] infobase instance
+      def initialize(id, app_id, host, user, infobase)
+        @id = id
+        @app_id = app_id
+        @host = host
+        @user = user
+      end
+
+      # Terminate session
+      def terminate
+        infobase.send(:infobase_wrapper).terminate(self) unless terminated?
+      end
+
+      # True if session is terminated
+      def terminated?
+        infobase.send(:infobase_wrapper).session_get(id).empty?
+      end
     end
 
     # Mixins for infobase deployed on 1C:Eneterprise server
@@ -73,6 +110,13 @@ module AssMaintainer
       end
       private :infobase_wrapper
 
+      # (see Interfaces::InfoBase#sessions)
+      def sessions
+        infobase_wrapper.sessions.map do |s|
+          s.to_session(self)
+        end
+      end
+
       # (see Interfaces::InfoBase#exists?)
       def exists?
         infobase_wrapper.clusters.size > 0
@@ -141,6 +185,20 @@ module AssMaintainer
         # Helper
         def ib_ref
           ib.connection_string.ref
+        end
+
+        # @param session [InfoBase::Session]
+        def terminate(session)
+          session_get(session.id).each do |s|
+            s.terminate
+          end
+        end
+
+        # Helper select session per +ID+. In normal returns arry with single
+        # element or empty array
+        # @return [Array<EnterpriseServers::Wrappers::Session>]
+        def session_get(id)
+          sessions.select {|s| s.SessionId().to_s == id.to_s}
         end
 
         # @return [Array<EnterpriseServers::Wrappers::Session>] infobase

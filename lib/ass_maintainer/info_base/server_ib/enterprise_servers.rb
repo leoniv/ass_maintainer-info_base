@@ -65,6 +65,13 @@ module AssMaintainer
               sagent.TerminateSession(cluster.ole, ole)
             rescue WIN32OLERuntimeError
             end
+
+            # @return [InfoBase::Session]
+            # @param infobase [InfoBase] instance
+            def to_session(infobase)
+              InfoBase::Session
+                .new SessionId(), AppId(), Host(), UserName(), infobase
+            end
           end
         end
       end
