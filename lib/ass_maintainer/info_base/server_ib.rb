@@ -117,6 +117,41 @@ module AssMaintainer
         end
       end
 
+      # (see Interfaces::InfoBase#lock)
+      def lock(from: Time.now, to: Time.now + 3600, message: '')
+        raise 'FIXME'
+        nil
+      end
+
+      # (see Interfaces::InfoBase#unlock)
+      def unlock
+        raise 'FIXME'
+        nil
+      end
+
+      # (see Interfaces::InfoBase#unlock!)
+      def unlock!
+        raise 'FIXME'
+        nil
+      end
+
+      # (see Interfaces::InfoBase#lock_scjobs)
+      def lock_scjobs
+        infobase_wrapper.wp_connection.lock_schjobs!
+        nil
+      end
+
+      # (see Interfaces::InfoBase#unlock_scjobs)
+      def unlock_scjobs
+        infobase_wrapper.wp_connection.unlock_schjobs!
+        nil
+      end
+
+      # (see Interfaces::InfoBase#locked?)
+      def locked?
+        infobase_wrapper.wp_connection.locked?
+      end
+
       # (see Interfaces::InfoBase#exists?)
       def exists?
         infobase_wrapper.clusters.size > 0
@@ -210,12 +245,6 @@ module AssMaintainer
           end.flatten
         end
 
-#FIXME        # FIXME: True if infobase locked
-#FIXME        def locked?
-#FIXME          fail 'FIXME'
-#FIXME          wp_connection.locked? ib_ref
-#FIXME        end
-
 #FIXME        # Lock infoabse
 #FIXME        # @param from [Date Time] locking from time
 #FIXME        # @param to [Date Time] locking until time
@@ -226,8 +255,8 @@ module AssMaintainer
 #FIXME        end
 
         # Dlete infobase.
-        # @note For first item calls {Cluster#drop_infobase!} with real
-        #   +mode+ and uses mode == :alive_db for all other.
+        # @note For first item calls {EnterpriseServers::Cluster#drop_infobase!}
+        #   with real +mode+ and uses mode == :alive_db for all other.
         #   Otherwise when mode == :destroy_db raises error
         #   "Не найдена база данных * в SQL-сервере *"
         # @param mode (see Cluster#drop_infobase!)

@@ -112,8 +112,7 @@ module AssMaintainer
 
           def locked?
             ii = infobase_info
-            raise 'FIXME'
-            #FIXME ii.SessionsDenied && ii.PermissionCode != permission_code
+            ii.SessionsDenied && !ii.PermissionCode.to_s.empty?
           end
 
           def connections
@@ -161,19 +160,15 @@ module AssMaintainer
             UpdateInfoBase(ii)
           end
 
-          # @return [true false] old state of +ScheduledJobsDenied+
           def lock_schjobs!
             ii = infobase_info
-            @schjobs_old_state = ii.ScheduledJobsDenied
             ii.ScheduledJobsDenied = true
             UpdateInfoBase(ii)
-            @schjobs_old_state
           end
 
-          # @param old_state [true false] state returned {#lock_schjobs!}
           def unlock_schjobs!
             ii = infobase_info
-            ii.ScheduledJobsDenied = @schjobs_old_state || true
+            ii.ScheduledJobsDenied = false
             UpdateInfoBase(ii)
           end
 
