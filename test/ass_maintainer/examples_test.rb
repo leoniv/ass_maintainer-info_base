@@ -172,10 +172,6 @@ module AssMaintainer::InfoBaseTest
         ib.make # make empty server ib
         ib.exists?.must_equal true
 
-        # Restore IB with root user
-        ib.restore! Fixtures::DT_FILE_WITH_ROOT_USER
-        ib.usr = 'root'
-
         # Open session with infobase
         thick = ib.ole(:thick)
         thick.__open__ ib.connection_string
