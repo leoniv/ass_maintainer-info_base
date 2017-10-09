@@ -39,7 +39,7 @@ module AssMaintainer::InfoBaseTest
   describe 'Restrictions for' do
     describe 'Server infobase' do
       it 'Not working in Linux' do
-        skip unless LINUX
+        skip 'LINUX_ONLY!' unless LINUX
 
         cs = AssMaintainer::InfoBase.cs_srv srvr: "host1", ref: 'facke_ib'
 
@@ -70,7 +70,7 @@ module AssMaintainer::InfoBaseTest
     describe 'All infobase' do
       include PrepareExample::RmInfobaseBefore
 
-      it 'in #read_only? infobases dangerous methods fails' do
+      it '#read_only? infobases dangerous methods fails' do
         ib = AssMaintainer::InfoBase.new('instance name', Tmp::FILE_IB_CS)
 
         ib.read_only?.must_equal true
