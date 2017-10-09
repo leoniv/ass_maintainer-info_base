@@ -44,15 +44,15 @@ module AssMaintainer
       module InfoBase
         require 'date'
 
-        # @note For file infobase must returns empty array
+        # @note For {InfoBase::FileIb} must returns empty array
         # Returns array of infobase sessions
         # @return [Array <InfoBase::Session>]
         def sessions
           fail NotImplementedError
         end
 
-        # @note It must work for server infobase only.
-        #  For file infobase it must do nothing
+        # @note It must work for {InfoBase::ServerIb} only.
+        #  For {InfoBase::FileIb} it must do nothing
         # Locking infobase if it possible. Be careful it terminate all
         # sessions! Before do it should set +InfoBase#unlock_code+!
         # Schedule jobs will be locked to!
@@ -89,8 +89,8 @@ module AssMaintainer
           fail NotImplementedError
         end
 
-        # @note For file infobase it must always return +false+
-        #  It work for server infobase only.
+        # @note For {InfoBase::FileIb} it must always return +false+
+        #  It work for {InfoBase::ServerIb} only.
         # Return +true+ if on server flag +SessionsDenied == true+
         # and +PermissionCode+ setted
         def locked?
