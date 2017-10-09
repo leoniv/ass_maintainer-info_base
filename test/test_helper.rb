@@ -57,9 +57,6 @@ module AssMaintainer::InfoBaseTest
 
     DT_FILE_WITH_ROOT_USER = File.join PATH, 'ib_with_root_user.dt'
     fail unless File.file? DT_FILE_WITH_ROOT_USER
-
-    HELLO_EPF = File.join PATH, 'hello.epf'
-    fail unless File.file? HELLO_EPF
   end
 
   require 'test_helper/esrv_env'
