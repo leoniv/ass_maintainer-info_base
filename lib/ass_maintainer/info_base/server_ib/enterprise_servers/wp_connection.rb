@@ -181,6 +181,16 @@ module AssMaintainer
             getInfoBases.empty?
           end
           private :reconnect_required?
+
+          def raise_unless_unlock_possable(err, unlock_code)
+            ii = infobase_info
+            return if !ii.SessionsDenied
+            return if ii.PermissionCode.to_s.empty?
+            return if unlock_code.to_s.downcase == ii.PermissionCode
+              .to_s.downcase
+            fail err, "Infobase is locked and PermissionCode:"\
+              " `#{ii.PermissionCode}' not match unlock_code: `#{unlock_code}'"
+          end
         end
       end
     end

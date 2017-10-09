@@ -110,6 +110,11 @@ module AssMaintainer
       end
       private :infobase_wrapper
 
+      def wp_connection
+        infobase_wrapper.wp_connection
+      end
+      private :wp_connection
+
       # (see Interfaces::InfoBase#sessions)
       def sessions
         infobase_wrapper.sessions.map do |s|
@@ -119,40 +124,45 @@ module AssMaintainer
 
       # (see Interfaces::InfoBase#lock)
       def lock(from: Time.now, to: Time.now + 3600, message: '')
-        raise 'FIXME'
-#FIXME  fail '#unlock_code is required' if ib.unlock_code.to_s.empty?
+        fail LockError, '#unlock_code is required' if unlock_code.to_s.empty?
+        unlock
+        wp_connection.lock_sessions!(from, to, unlock_code, message)
+        lock_schjobs!
+        sessions.each do |sess|
+          sess.terminate
+        end
         nil
       end
 
       # (see Interfaces::InfoBase#unlock)
       def unlock
-        raise 'FIXME'
+        wp_connection.raise_unless_unlock_possable UnlockError
         unlock!
         nil
       end
 
       # (see Interfaces::InfoBase#unlock!)
       def unlock!
-        infobase_wrapper.wp_connection.unlock_schjobs!
-        infobase_wrapper.wp_connection.unlock_sessions!
+        wp_connection.unlock_schjobs!
+        wp_connection.unlock_sessions!
         nil
       end
 
       # (see Interfaces::InfoBase#lock_scjobs)
       def lock_scjobs
-        infobase_wrapper.wp_connection.lock_schjobs!
+        wp_connection.lock_schjobs!
         nil
       end
 
       # (see Interfaces::InfoBase#unlock_scjobs)
       def unlock_scjobs
-        infobase_wrapper.wp_connection.unlock_schjobs!
+        wp_connection.unlock_schjobs!
         nil
       end
 
       # (see Interfaces::InfoBase#locked?)
       def locked?
-        infobase_wrapper.wp_connection.locked?
+        wp_connection.locked?
       end
 
       # (see Interfaces::InfoBase#exists?)
