@@ -41,7 +41,7 @@ module AssMaintainer::InfoBaseTest
       it 'Not working in Linux' do
         skip unless LINUX
 
-        cs = AssMaintainer::InfoBase.cs_srv srvr: "host1,host2", ref: 'facke_ib'
+        cs = AssMaintainer::InfoBase.cs_srv srvr: "host1", ref: 'facke_ib'
 
         ib = AssMaintainer::InfoBase.new('insatnce_name', cs)
 
@@ -69,18 +69,6 @@ module AssMaintainer::InfoBaseTest
 
     describe 'All infobase' do
       include PrepareExample::RmInfobaseBefore
-
-      it '#ole helper not working in Linux' do
-        skip unless LINUX
-
-        ib = AssMaintainer::InfoBase.new('instance name', Tmp::FILE_IB_CS)
-
-        e = proc {
-          ib.ole :thick
-        }.must_raise NotImplementedError
-
-        e.message.must_match %{WIN32OLE undefined for this machine}
-      end
 
       it 'in #read_only? infobases dangerous methods fails' do
         ib = AssMaintainer::InfoBase.new('instance name', Tmp::FILE_IB_CS)
