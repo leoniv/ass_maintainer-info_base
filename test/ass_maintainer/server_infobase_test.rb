@@ -190,15 +190,95 @@ module AssMaintainer::InfoBaseTest
   end
 
   describe AssMaintainer::InfoBase::ServerIb::ServerBaseMaker do
-    it 'FIXME' do
-      fail 'FIXME'
+    def maker(ib = nil)
+      @maker ||= (
+        r = self.class.desc.new
+        r.instance_variable_set(:@infobase, ib)
+        r
+      )
     end
+
+    it 'const REQUIRE_FIELDS = [:dbsrvr, :dbuid, :dbms]' do
+      AssMaintainer::InfoBase::ServerIb::ServerBaseMaker::\
+        REQUIRE_FIELDS.must_equal [:dbsrvr, :dbuid, :dbms]
+    end
+
+    it '#entry_point' do
+      maker.class.superclass.must_equal AssMaintainer::InfoBase::DefaultMaker
+      AssMaintainer::InfoBase::DefaultMaker
+        .any_instance.expects(:entry_point).returns(:entry_point)
+      maker.expects(:prepare_making)
+      maker.execute(nil).must_equal :entry_point
+    end
+
+    def ib_stub(cs)
+      @ib_stub ||= AssMaintainer::InfoBase.new('', cs)
+    end
+
+    it '#connection_string' do
+      cs = 'Srvr="fake_host";Ref="fake.ib";'
+      maker(ib_stub(cs)).connection_string.to_s.must_equal cs
+    end
+
+    it '#require_filled? false without :dbsrvr' do
+      cs = 'Srvr="fake_host";Ref="fake_ib";DBMS="MSSQLServer";dbuid="dbusr"'
+      maker(ib_stub(cs)).require_filled?.must_equal false
+    end
+
+    it '#require_filled? false without :dbms' do
+      cs = 'Srvr="fake_host";Ref="fake_ib";dbsrvr="db_fake_host";dbuid="dbusr"'
+      maker(ib_stub(cs)).require_filled?.must_equal false
+    end
+
+    it '#require_filled? false without :dbuid' do
+      cs = 'Srvr="fake_host";Ref="fake_ib";DBMS="MSSQLServer";dbsrvr="db_fake_host"'
+      maker(ib_stub(cs)).require_filled?.must_equal false
+    end
+
+    it '#require_filled? true' do
+      cs = 'Srvr="fake_host";Ref="fake_ib";dbuid="dbusr";'\
+        'DBMS="MSSQLServer";dbsrvr="db_fake_host"'
+      maker(ib_stub(cs)).require_filled?.must_equal true
+    end
+
+    it '#set_if_empty' do
+      cs = 'Srvr="fake_host";Ref="fake.ib";'
+      maker(ib_stub(cs)).set_if_empty(:srvr, 'srvr').must_be_nil
+      maker.connection_string.to_s.must_equal cs
+      maker.set_if_empty(:db, 'db').must_equal 'db'
+      maker.set_if_empty(:crsqldb, 'Y').must_equal 'Y'
+      maker.set_if_empty(:susr, 'susr').must_equal 'susr'
+      maker.set_if_empty(:spwd, 'spwd').must_equal 'spwd'
+
+      maker.connection_string
+        .to_s.must_equal 'Srvr="fake_host";Ref="fake.ib";DB="db"'\
+                         ';CrSQLDB="Y";SUsr="susr";SPwd="spwd";'
+    end
+
   end
 
   describe AssMaintainer::InfoBase::ServerIb::ServerBaseDestroyer do
+    def infobase_wrapper_stub
+      r = mock
+      r.responds_like AssMaintainer::InfoBase::ServerIb::InfoBaseWrapper.new(nil)
+      r
+    end
+
     it '#entry_point' do
+      wrapper = infobase_wrapper_stub
+      wrapper.expects(:drop_infobase!).with(:destroy_db).returns(:drop)
+      ib_mock = mock
+      ib_mock.expects(:infobase_wrapper).returns(wrapper)
       destroyer = self.class.desc.new
-      raise 'FIXME'
+      destroyer.expects(:infobase).returns(ib_mock)
+      destroyer.execute(nil).must_equal :drop
+    end
+
+    it 'const DROP_MODE = :destroy_db' do
+      AssMaintainer::InfoBase::ServerIb::ServerBaseDestroyer::DROP_MODE
+        .must_equal :destroy_db
+      AssMaintainer::InfoBase::ServerIb::EnterpriseServers::\
+        WpConnection::DROP_MODES[:destroy_db].wont_be_nil
     end
   end
 
