@@ -11,13 +11,13 @@ module AssMaintainer
   #
   # 1C:Enterprise application may be deployed as file (aka file infobase) or
   # on a 1C:Enterprise server (aka server infobase). In the {#initialize}
-  # instance of this class will be extended suitable module:
-  # - server infobase instance will be extend module {ServerIb}
-  # - file infobase instance will be exten module {FileIb}
+  # instance of will be extended by suitable module:
+  # - server infobase instance will be extended by {ServerIb} module
+  # - file infobase instance will be extended by {FileIb} module
   #
-  # Both instance type inherits methods from {Interfaces::InfoBase}
+  # Both instances types inherits methods from {Interfaces::InfoBase}
   #
-  # All instances get methods wrappers for access to {#options} see
+  # All instances gets methods for access to {#options} see
   # {.build_options_wrapper}
   class InfoBase
     extend AssLauncher::Api
