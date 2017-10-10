@@ -134,6 +134,20 @@ module AssMaintainer::InfoBaseTest
       server_ib.expects(:wp_connection).returns(wp_connection)
       server_ib.locked?.must_equal :locked?
     end
+
+    it '#maker' do
+      server_ib.send(:maker)
+        .must_be_instance_of AssMaintainer::InfoBase::ServerIb::ServerBaseMaker
+      server_ib.options[:maker] = :fake_maiker
+      server_ib.send(:maker).must_equal :fake_maiker
+    end
+
+    it '#destroyer' do
+      server_ib.send(:destroyer)
+        .must_be_instance_of AssMaintainer::InfoBase::ServerIb::ServerBaseDestroyer
+      server_ib.options[:destroyer] = :fake_destroyer
+      server_ib.send(:destroyer).must_equal :fake_destroyer
+    end
   end
 
   describe AssMaintainer::InfoBase::Session do
@@ -305,17 +319,158 @@ module AssMaintainer::InfoBaseTest
   end
 
   describe AssMaintainer::InfoBase::ServerIb::InfoBaseWrapper do
-    def new_wrapper(infobase = nil)
-      self.class.desc.new infobase
+    def ib_stub(cs = 'srvr="fake_host";ref="fake.ib"')
+      @ib_stub ||= AssMaintainer::InfoBase.new('', cs)
     end
 
-    it '#exists? not implemented' do
-      raise 'FIXME'
+    def wrapper(infobase = nil)
+      @wrapper ||= self.class.desc.new infobase
+    end
+
+    it '#exists? false' do
+      wrapper.expects(:clusters).returns([])
+      wrapper.exists?.must_equal false
+    end
+
+    it '#exists? true' do
+      wrapper.expects(:clusters).returns([1])
+      wrapper.exists?.must_equal true
     end
 
     it '#initialize' do
-      w = new_wrapper(:infobase)
-      w.infobase.must_equal :infobase
+      wrapper(:infobase).infobase.must_equal :infobase
+    end
+
+    it '#server_agent if ib.sagent_host' do
+      ib_stub.sagent_host = 'fake_sagent_host'
+      ib_stub.sagent_usr = 'susr'
+      ib_stub.sagent_pwd = 'spwd'
+      sagent = wrapper(ib_stub).send(:sagent_get)
+      sagent.host.must_equal 'fake_sagent_host'
+      sagent.port.must_equal '1540', 'default port'
+      sagent.user.must_equal 'susr'
+      sagent.password.must_equal 'spwd'
+    end
+
+    it '#server_agent unless ib.sagent_host' do
+      ib_stub.sagent_usr = 'susr'
+      ib_stub.sagent_pwd = 'spwd'
+      sagent = wrapper(ib_stub).send(:sagent_get)
+      sagent.host.must_equal 'fake_host'
+      sagent.port.must_equal '1540', 'default port'
+      sagent.user.must_equal 'susr'
+      sagent.password.must_equal 'spwd'
+    end
+
+    it '#sagent' do
+      sagent = mock
+      sagent.responds_like AssMaintainer::InfoBase::ServerIb::\
+        EnterpriseServers::ServerAgent.new('fake_host','','')
+      sagent.expects(:connect).with(ib_stub.platform_require).returns(sagent)
+      wrapper(ib_stub).expects(:sagent_get).returns(sagent)
+      wrapper.sagent.must_equal sagent
+      wrapper.sagent.must_equal sagent, 'instace var @sagent setted'
+    end
+
+    it '#cs_servers returns uniq host:port servers' do
+      cs = 'srvr="host1:port1,host2,host1:port1,host1:port2";ref="fake"'
+      wrapper(ib_stub(cs))
+      wrapper.send(:cs_servers)[0].host.must_equal 'host1', 'with port1'
+      wrapper.send(:cs_servers)[1].host.must_equal 'host2'
+      wrapper.send(:cs_servers)[2].host.must_equal 'host1', 'with port2'
+      wrapper.send(:cs_servers)[3].must_be_nil
+    end
+
+    it '#cs_clusters' do
+      cs = 'srvr="host1:1541,host2,host1:1541,host1:1542";ref="fake"'
+      ib_stub(cs).cluster_usr = 'cusr'
+      ib_stub.cluster_pwd = 'cpwd'
+      cs_clusters = wrapper(ib_stub).send(:cs_clusters)
+      cs_clusters.size.must_equal 3
+      cs_clusters[0].host_port.must_equal 'host1:1541'
+      cs_clusters[0].user.must_equal 'cusr'
+      cs_clusters[0].password.must_equal 'cpwd'
+    end
+
+    it '#clusters fail' do
+      cs = 'srvr="host1:1541,host2,host1:1541,host1:1542";ref="fake"'
+      e = proc {
+        wrapper(ib_stub(cs)).clusters
+      }.must_raise NotImplementedError
+      e.message.must_match %r{Multiple clusters deployment not supported}i
+    end
+
+    it '#clusters' do
+      cluster_stub = mock
+        .responds_like(AssMaintainer::InfoBase::ServerIb::\
+                       EnterpriseServers::Cluster.new('host:port'))
+      cluster_stub.expects(:attach).with(:sagent).returns(cluster_stub)
+      cluster_stub.expects(:infobase_include?).with('fake.ib').returns(true)
+      wrapper(ib_stub).expects(:fail_multiple_servers_not_support)
+      wrapper.expects(:cs_clusters).returns([cluster_stub])
+      wrapper.expects(:sagent).returns(:sagent)
+      wrapper.clusters.must_equal [cluster_stub]
+    end
+
+    it '#wp_connection' do
+      cluster_stub = mock
+        .responds_like(AssMaintainer::InfoBase::ServerIb::\
+                       EnterpriseServers::Cluster.new('host:port'))
+      cluster_stub.expects(:wp_connection).with(wrapper).returns(:wp_connection)
+      wrapper.expects(:clusters).returns([cluster_stub])
+      wrapper.expects(:exists?).returns(true)
+      wrapper.wp_connection.must_equal :wp_connection
+    end
+
+    it '#wp_connection fail' do
+      wrapper.expects(:exists?).returns(false)
+      e = proc {
+        wrapper.wp_connection
+      }.must_raise RuntimeError
+
+      e.message.must_match %r{Infobase not exists}
+    end
+
+    it '#terminate' do
+      sess_stub = mock.responds_like AssMaintainer::InfoBase::Session
+        .new(nil,nil,nil,nil,nil)
+      sess_stub.expects(:id).returns(:id)
+      sess_stub.expects(:terminate)
+      wrapper.expects(:session_get).with(:id).returns([sess_stub])
+      wrapper.terminate(sess_stub)
+    end
+
+    it '#session_get' do
+      sess_stub = mock
+      sess_stub.expects(:SessionId).returns(:id).twice
+      sess_stub.expects(:SessionId).returns(:other_id)
+      wrapper.expects(:sessions).returns([sess_stub, sess_stub, sess_stub])
+      wrapper.session_get(:id).must_equal [sess_stub, sess_stub]
+    end
+
+    it '#sessions return [] unless exists?' do
+      wrapper.expects(:exists?).returns(false)
+      wrapper.sessions.must_equal []
+    end
+
+    it '#sessions' do
+      cluster_stub = mock
+        .responds_like(AssMaintainer::InfoBase::ServerIb::
+                       EnterpriseServers::Cluster.new('host:port'))
+      cluster_stub.expects(:infobase_sessions).with('fake.ib').returns([1,2,3]).twice
+      wrapper(ib_stub).expects(:exists?).returns(true)
+      wrapper.expects(:clusters).returns([cluster_stub, cluster_stub])
+      wrapper.sessions.must_equal [1,2,3,1,2,3]
+    end
+
+    it '#drop_infobase!' do
+      cluster_stub = mock
+        .responds_like(AssMaintainer::InfoBase::ServerIb::
+                       EnterpriseServers::Cluster.new('host:port'))
+      cluster_stub.expects(:drop_infobase!).with(wrapper, :fake_drop_mode)
+      cluster_stub.expects(:drop_infobase!).with(wrapper, :alive_db)
+      wrapper.expects(:clusters).returns([cluster_stub, cluster_stub])
+      wrapper.drop_infobase!(:fake_drop_mode)
     end
   end
 
@@ -351,12 +506,6 @@ module AssMaintainer::InfoBaseTest
       fake_ping.expects(:ping?).returns(:true_false)
       @inst.expects(:tcp_ping).returns(fake_ping)
       @inst.ping?.must_equal :true_false
-    end
-  end
-
-  describe AssMaintainer::InfoBase::Session do
-    it 'FIXME' do
-      skip 'FIXME'
     end
   end
 end

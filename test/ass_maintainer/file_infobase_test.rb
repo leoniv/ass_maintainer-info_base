@@ -33,6 +33,20 @@ module AssMaintainer::InfoBaseTest
         .returns(:may_be_exists)
       file_ib.exists?.must_equal :may_be_exists
     end
+
+    it '#maker' do
+      file_ib.send(:maker)
+        .must_be_instance_of AssMaintainer::InfoBase::DefaultMaker
+      file_ib.options[:maker] = :fake_maiker
+      file_ib.send(:maker).must_equal :fake_maiker
+    end
+
+    it '#destroyer' do
+      file_ib.send(:destroyer)
+        .must_be_instance_of AssMaintainer::InfoBase::FileIb::FileBaseDestroyer
+      file_ib.options[:destroyer] = :fake_destroyer
+      file_ib.send(:destroyer).must_equal :fake_destroyer
+    end
   end
 
   describe AssMaintainer::InfoBase::FileIb::FileBaseDestroyer do

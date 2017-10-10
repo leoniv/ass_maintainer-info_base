@@ -63,12 +63,6 @@ module AssMaintainer::InfoBaseTest
       ib.make.must_equal ib
     end
 
-    it '#maker' do
-      ib.send(:maker).must_be_instance_of @maker_class
-      ib.options[:maker] = :fake_maiker
-      ib.send(:maker).must_equal :fake_maiker
-    end
-
     it '#rm! requires assurance' do
       e = proc {
         ib.rm!
@@ -94,15 +88,6 @@ module AssMaintainer::InfoBaseTest
       ib.expects(:destroyer).in_sequence(seq).returns(destroyer)
       ib.expects(:after_rm).in_sequence(seq).returns(hook)
       assert_nil ib.rm!(:yes)
-    end
-
-    it '#destroyer default' do
-      ib.send(:destroyer).must_be_instance_of @destroyer_class
-    end
-
-    it '#destroyer custom' do
-      ib.options[:destroyer] = :fake_destroyer
-      ib.send(:destroyer).must_equal :fake_destroyer
     end
 
     it '#connection_string' do
@@ -434,8 +419,6 @@ module AssMaintainer::InfoBaseTest
       before do
         @ib_type_extension = AssMaintainer::InfoBase::ServerIb
         @cs_class = AssLauncher::Support::ConnectionString::Server
-        @destroyer_class = AssMaintainer::InfoBase::ServerIb::ServerBaseDestroyer
-        @maker_class = AssMaintainer::InfoBase::ServerIb::ServerBaseMaker
         @ib = AssMaintainer::InfoBase.new('srv_tmp', Tmp::SRV_IB_CS, false)
       end
 
@@ -451,8 +434,6 @@ module AssMaintainer::InfoBaseTest
       before do
         @ib_type_extension = AssMaintainer::InfoBase::FileIb
         @cs_class = AssLauncher::Support::ConnectionString::File
-        @destroyer_class = AssMaintainer::InfoBase::FileIb::FileBaseDestroyer
-        @maker_class = AssMaintainer::InfoBase::DefaultMaker
         @ib = AssMaintainer::InfoBase.new('tmp', Tmp::FILE_IB_CS, false)
         @ib.rm! :yes if ib.exists?
       end
