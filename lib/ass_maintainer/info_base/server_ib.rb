@@ -60,6 +60,8 @@ module AssMaintainer
         DROP_MODE = :destroy_db
 
         include Interfaces::IbDestroyer
+
+        # {InfoBase::Interfaces::IbDestroyer#entry_point} overload
         def entry_point
           infobase.send(:infobase_wrapper).drop_infobase!(DROP_MODE)
         end
@@ -68,13 +70,18 @@ module AssMaintainer
       # @api private
       # Serever infobase maker
       class ServerBaseMaker < InfoBase::DefaultMaker
+
+        # Fields of {#connection_string} required for 1C command
+        # +createinfobase+
         REQUIRE_FIELDS = [:dbsrvr, :dbuid, :dbms]
 
+        # {InfoBase::Interfaces::IbMaker#entry_point} overload
         def entry_point
           prepare_making
           super
         end
 
+        # Prepare {#connection_string} before execute making command
         def prepare_making
           fail "Fields #{REQUIRE_FIELDS} must be filled" unless require_filled?
           cs = connection_string
@@ -84,6 +91,8 @@ module AssMaintainer
           set_if_empty :spwd, infobase.cluster_pwd
         end
 
+        # True if all fields from {REQUIRE_FIELDS} setted
+        # in {#connection_string}
         def require_filled?
           REQUIRE_FIELDS.each do |f|
             return false if infobase.connection_string.send(f).nil?
@@ -91,11 +100,16 @@ module AssMaintainer
           true
         end
 
+        # set {#connection_string} field +prop+ to +value+ if filed
+        # +prop+ empty?
+        # @param prop [String Symbol] field name
+        # @param value
         def set_if_empty(prop, value)
           connection_string.send("#{prop}=", value) if\
             connection_string.send(prop).to_s.empty?
         end
 
+        # Return {InfoBase#connection_string} instance
         def connection_string
           infobase.connection_string
         end
