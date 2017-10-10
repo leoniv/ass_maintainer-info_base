@@ -7,7 +7,7 @@ module AssMaintainer
   # Class for manipulate with 1C:Enterprise application instance aka
   # +information base+ or +infobase+
   #
-  # Instances of this class have dinamicly generated interfaece
+  # Instances of this class has dynamically generated interface
   #
   # 1C:Enterprise application may be deployed as file (aka file infobase) or
   # on a 1C:Enterprise server (aka server infobase). In the {#initialize}
