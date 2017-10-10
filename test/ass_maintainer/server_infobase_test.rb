@@ -211,7 +211,7 @@ module AssMaintainer::InfoBaseTest
       maker.execute(nil).must_equal :entry_point
     end
 
-    def ib_stub(cs)
+    def ib_stub(cs = nil)
       @ib_stub ||= AssMaintainer::InfoBase.new('', cs)
     end
 
@@ -255,6 +255,28 @@ module AssMaintainer::InfoBaseTest
                          ';CrSQLDB="Y";SUsr="susr";SPwd="spwd";'
     end
 
+    it '#prepare_making fail' do
+      maker.expects(:require_filled?).returns(false)
+      e = proc {
+        maker.prepare_making
+      }.must_raise RuntimeError
+
+      e.message.must_match %r{Fields \[:dbsrvr, :dbuid, :dbms\] must be filled}
+    end
+
+    it '#prepare_making' do
+      cs = 'Srvr="fake";Ref="fake";'
+      ib_stub(cs).cluster_usr = :cusr
+      ib_stub.cluster_pwd = :cpwd
+
+      maker(ib_stub).expects(:require_filled?).returns(true)
+
+      maker.connection_string.to_s.must_equal cs
+      maker.prepare_making
+      maker.connection_string.to_s
+        .must_equal 'Srvr="fake";Ref="fake";DB="fake"'\
+                    ';CrSQLDB="Y";SUsr="cusr";SPwd="cpwd";'
+    end
   end
 
   describe AssMaintainer::InfoBase::ServerIb::ServerBaseDestroyer do
