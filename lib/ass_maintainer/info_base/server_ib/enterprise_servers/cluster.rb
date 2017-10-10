@@ -41,11 +41,6 @@ module AssMaintainer
             @ole
           end
 
-          # True if cluster attached into {#sagent} serever
-          def attached?
-            !@sagent.nil? && !@ole.nil?
-          end
-
           # Authenticate cluster user
           # @raise (see #ole)
           def authenticate
