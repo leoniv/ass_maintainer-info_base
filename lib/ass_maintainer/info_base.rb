@@ -277,7 +277,7 @@ module AssMaintainer
     # Returns instance for manipuate with
     # InfoBase database. If infobase not
     # exists returns nil
-    # @return [Dbase nil]
+    # @return [DbCfg nil]
     def db_cfg
       @db_cfg ||= DbCfg.new(self) if exists?
     end
