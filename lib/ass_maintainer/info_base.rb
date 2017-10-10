@@ -35,7 +35,7 @@ module AssMaintainer
       end
     end
 
-    # Deafult port for connect to 1C:Enterprise serever agent
+    # Deafult port for connect to 1C:Enterprise server agent
     DEFAULT_SAGENT_PORT = '1540'
 
     # Hooks before and after make and remove infobase. Hooks may be passed as

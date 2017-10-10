@@ -53,7 +53,7 @@ module AssMaintainer
       require 'ass_maintainer/info_base/server_ib/enterprise_servers'
 
       # @api private
-      # Defauld destroyer for serever infobase
+      # Defauld destroyer for server infobase
       class ServerBaseDestroyer
 
         # On default database will be destroyed!
@@ -68,7 +68,7 @@ module AssMaintainer
       end
 
       # @api private
-      # Serever infobase maker
+      # server infobase maker
       class ServerBaseMaker < InfoBase::DefaultMaker
 
         # Fields of {#connection_string} required for 1C command

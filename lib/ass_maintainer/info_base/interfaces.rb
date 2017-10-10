@@ -1,7 +1,7 @@
 module AssMaintainer
   class InfoBase
     # Riseses when infobase already locked and +InfoBase#unlock_code+
-    # does not macth +PermissionCode+ on serever
+    # does not macth +PermissionCode+ on server
     class UnlockError < StandardError; end
 
     # Raises when +InfoBase#unlock_code+ not setted

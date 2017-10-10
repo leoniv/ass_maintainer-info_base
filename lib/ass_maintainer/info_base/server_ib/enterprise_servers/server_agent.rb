@@ -5,12 +5,12 @@ module AssMaintainer
         # @api private
         # Object descrbed 1C server agent connection.
         # @example
-        #   # Get 1C:Eneterprise serever agent connection object and connect
+        #   # Get 1C:Eneterprise server agent connection object and connect
         #   # to net service
         #   sagent = ServerAgent.new('localhost:1540', 'admin', 'password')
         #     .connect('~> 8.3.8.0')
         #
-        #   # Working with serever agent connection
+        #   # Working with server agent connection
         #   sagent.ConnectionString #=> "tcp://localhost:1540"
         #   cl = sagent.cluster_find 'localhost', '1542'
         #

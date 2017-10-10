@@ -143,7 +143,7 @@ module AssMaintainer
 
             # @param host_port [String] string like a +host_name:port_number+
             # @param user [String] server user name
-            # @param password [String] serever user password
+            # @param password [String] server user password
             def initialize(host_port, user = nil, password = nil)
               fail ArgumentError, 'Host name require' if host_port.to_s.empty?
               @raw_host_port = host_port

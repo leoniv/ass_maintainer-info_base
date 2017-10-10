@@ -17,7 +17,7 @@ module AssMaintainer
             DEF_PORT
           end
 
-          # Attache cluster into serever agent
+          # Attache cluster into server agent
           # @param agent [ServerAgent]
           # @raise (see #authenticate)
           def attach(agent)
