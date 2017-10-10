@@ -64,7 +64,7 @@ module AssMaintainer
           fail NotImplementedError
         end
 
-        # @note (see #lock}
+        # @note (see #lock)
         # Soft unlocking infobase if it possible.
         # For force unlocking exec #{unlock!}
         # @raise [UnlockError] unless unlocking possible
@@ -72,19 +72,19 @@ module AssMaintainer
           fail NotImplementedError
         end
 
-        # @note (see #lock}
+        # @note (see #lock)
         # Force unlock infobase.
         def unlock!
           fail NotImplementedError
         end
 
-        # @note (see #lock}
+        # @note (see #lock)
         # Lock schedule jobs
         def lock_schjobs
           fail NotImplementedError
         end
 
-        # @note (see #lock}
+        # @note (see #lock)
         # Unlock schedule jobs
         def unlock_schjobs
           fail NotImplementedError
