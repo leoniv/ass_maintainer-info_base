@@ -86,6 +86,7 @@ For execute server infobase tests defined in
 
 On default, server infobase tests skipped. For execute server infobase tests
 require to pass server parameters in `ENV[ESRV_ENV]` like this:
+
 ```
 $export ESRV_ENV="--ragent user:pass@host:port \
   --rmngr user:pass@host:port \
@@ -93,9 +94,16 @@ $export ESRV_ENV="--ragent user:pass@host:port \
   --dbsrv user:pass@localhost\\sqlexpress"
 ```
 
-Running tests:
+For running local 1C:Enterprise application server instance can use
+[bin/runsrv](bin/runsrv):
 
-    $export SIMPLECOV=YES && rake test
+    $bin/runsrv -h
+
+But `runsrv` running 1C server only! DBMS server must be already running manually
+
+Running all tests:
+
+    $bundler exec rake test SIMPLECOV=YES
 
 ## Development
 
