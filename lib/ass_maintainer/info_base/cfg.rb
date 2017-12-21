@@ -60,11 +60,13 @@ module AssMaintainer
     class DbCfg < Abstract::Cfg
       # Update database configuration from infobase
       # configuration
-      def update
+      # @param was_err [true false] control +warningsAsErrors+ 1C:Enterprise
+      #  CLI parameter
+      def update(was_err = false)
         fail MethodDenied, :update if infobase.read_only?
         infobase.designer do
           updateDBCfg do
-            warningsAsErrors
+            warningsAsErrors if was_err
           end
         end.run.wait.result.verify!
       end
