@@ -1,18 +1,33 @@
 # AssMaintainer::InfoBase
 
+Gem for juggle with the [1C:Enterprise](http://1c.ru) application instances
+(aka infobase or information base) as easy as possible.
+Main thing of this gem is the `class AssMaintainer::InfoBase` which provides
+features to do it.
 
-Gem provides features for manipulate with 1C:Enterprise applications as easy
-as possible.
+## 1.0.0 realase
 
-Main thing of this gem `class AssMaintainer::InfoBase` provides
-some methods for manipulate with information base;
+- implemented support of infobase deployed on 1C: Enterprise server (aka server
+  infobse)
+- isn't supporting configuration extensions
 
-## Realase note
+## Restriction
 
-### v.0.1.0
+Fully work with server infobse possible in Windows(Cygwin)
+x86 Ruby only. Cause of this is in-process OLE server `V83.COMConnector` which
+used for connect to 1C:Enterprise application server when require check for
+infobase exist or get infobase sessions or drop infobase or etc. actions.
 
-- Not support infobases deployed on 1C:Enterprise server
-- Not support configuration extensions
+Furthermore, for fully working with server infobse require logging on a
+1C:Enterprise application server as a central-server administrator and
+as a cluster administrator.
+
+Structure 1C:Enterprise application server is complex and confusing.
+For more info about 1C:Enterprise server look 1C documentation.
+
+Any examples for restrictions look in
+[example](./test/ass_maintainer/examples_test.rb) defined as `Restrictions for`
+spec
 
 ## Installation
 
@@ -48,23 +63,34 @@ ib = AssMaintainer::InfoBase.new('infobase_name', connection_string, read_only)
 # Dump data
 ib.dump(dump_path)
 
-
 # As 1C application developer you should make dump of infobase configuration
 
 # Dump configuration
 ib.cfg.dump(cf_dump_path)
 
 # ... etc
-
 ```
 
 For more examples see [examples](./test/ass_maintainer/examples_test.rb)
 
 ## Test
 
-For running tests require installs 1C:Enterprise platform version defined in constant
-`PLATFORM_REQUIRE` from
-[test_helper.rb](./test/test_helper.rb)
+For execute all tests require 1C:Enterprise platform installed.
+Version defined in constant `PLATFORM_REQUIRE` from [test_helper.rb](./test/test_helper.rb)
+
+For execute server infobase tests defined in
+[examples](./test/ass_maintainer/examples_test.rb) require:
+- have running 1C:Enterprise server. Version defined in `PLATFORM_REQUIRE`
+- have running data base(DBMS) server suitable for 1C:Enterprise.
+
+On default server infobase tests skipped. For execute server infobase tests
+require pass server parameters in `ENV[ESRV_ENV]` like this:
+```
+$export ESRV_ENV="--ragent user:pass@host:port \
+  --rmngr user:pass@host:port \
+  --dbms MSSQLServer \
+  --dbsrv user:pass@localhost\\sqlexpress"
+```
 
     $export SIMPLECOV=YES && rake test
 
