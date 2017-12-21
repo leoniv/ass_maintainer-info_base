@@ -74,6 +74,8 @@ ib.cfg.dump(cf_dump_path)
 # ... etc
 ```
 
+For more examples see [examples](./test/ass_maintainer/examples_test.rb)
+
 ## Define 1C:Enterprise version requirement
 
 On default using last installed 1C:Enterprise version. But
@@ -95,8 +97,6 @@ end
 ib = AssMaintainer::InfoBase.new('ib_name', 'File="path"')
 ib.platform_require #=> "~> 8.3.9.0"
 ```
-
-For more examples see [examples](./test/ass_maintainer/examples_test.rb)
 
 ## Test
 
