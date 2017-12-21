@@ -76,7 +76,8 @@ For more examples see [examples](./test/ass_maintainer/examples_test.rb)
 ## Test
 
 For execute all tests require 1C:Enterprise platform installed.
-Version defined in constant `PLATFORM_REQUIRE` from [test_helper.rb](./test/test_helper.rb)
+Version defined in constant `PLATFORM_REQUIRE` in
+[platform_require.rb](./test/test_helper/platform_require.rb)
 
 For execute server infobase tests defined in
 [examples](./test/ass_maintainer/examples_test.rb) require:
