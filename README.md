@@ -2,14 +2,17 @@
 
 Gem for juggle with the [1C:Enterprise](http://1c.ru) application instances
 (aka infobase or information base) as easy as possible.
-Main thing of this gem is the `class AssMaintainer::InfoBase` which provides
+Main thing of this gem is the class `AssMaintainer::InfoBase` which provides
 features to do it.
 
-## 1.0.0 realase
+In this gem defined two types of 1C application instance:
 
-- implemented support of infobase deployed on 1C: Enterprise server (aka server
-  infobse)
-- isn't supporting configuration extensions
+1. application deployed on a 1C:Enterprise application server aka *server infobase*
+2. application deployed as a file aka *file infobase*
+
+Class `AssMaintainer::InfoBase` implements both types of applications but using
+difference mixins for each of them in constructor. Type of application,
+detects per type of connect string.
 
 ## Restriction
 
