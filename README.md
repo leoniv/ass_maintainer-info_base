@@ -89,11 +89,7 @@ ib = AssMaintainer::InfoBase.new('ib_name', 'File="path"', false)
 ib.rm! :yes #=> nil
 ```
 
-### More examples
-
-For more examples see [examples](./test/ass_maintainer/examples_test.rb)
-
-## Define 1C:Enterprise version requirement
+### Define 1C:Enterprise version requirement
 
 On default using last installed 1C:Enterprise version. But
 `AssMaintainer::InfoBase` provides feature for define 1C:Enterprise version
@@ -114,6 +110,10 @@ end
 ib = AssMaintainer::InfoBase.new('ib_name', 'File="path"')
 ib.platform_require #=> "~> 8.3.9.0"
 ```
+
+### More examples
+
+For more examples see [examples](./test/ass_maintainer/examples_test.rb)
 
 ## Test
 
