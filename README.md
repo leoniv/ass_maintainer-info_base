@@ -50,7 +50,7 @@ Or install it yourself as:
 
 ## Usage
 
-Small example:
+### Small example:
 
 ```ruby
 reqiure 'ass_maintainer/info_base'
@@ -61,7 +61,7 @@ reqiure 'ass_maintainer/info_base'
 connection_string = 'File="infobase_path";'
 
 # Get InfoBase instance
-ib = AssMaintainer::InfoBase.new('infobase_name', connection_string, read_only)
+ib = AssMaintainer::InfoBase.new('infobase_name', connection_string)
 
 # Dump data
 ib.dump(dump_path)
@@ -73,6 +73,23 @@ ib.cfg.dump(cf_dump_path)
 
 # ... etc
 ```
+
+### Destructive actions protection
+
+On default all instance of `AssMaintainer::InfoBase` marked as `read_only`. If
+infobase is `read_only` all destructive actions denied,
+`MethodDenied` exception will be raised. For control it behavior uses
+`read_only` parameter of constructor.
+
+```ruby
+ib = AssMaintainer::InfoBase.new('ib_name', 'File="path"')
+ib.rm! :yes #raised AssMaintainer::InfoBase::MethodDenied
+
+ib = AssMaintainer::InfoBase.new('ib_name', 'File="path"', false)
+ib.rm! :yes #=> nil
+```
+
+### More examples
 
 For more examples see [examples](./test/ass_maintainer/examples_test.rb)
 
