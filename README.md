@@ -74,6 +74,28 @@ ib.cfg.dump(cf_dump_path)
 # ... etc
 ```
 
+## Define 1C:Enterprise version requirement
+
+On default using last installed 1C:Enterprise version. But
+`AssMaintainer::InfoBase` provides feature for define 1C:Enterprise version
+manually.
+
+Example for define 1C:Enterprise platform requirement
+
+```ruby
+# Define platform version for single instance
+ib = AssMaintainer::InfoBase.new('ib_name', 'File="path"', platform_require: '~> 8.3.10.0')
+ib.platform_require #=> "~> 8.3.10.0"
+
+# Define platform verion for all instances
+AssMaintainer::InfoBase.configure do |conf|
+  conf.platform_require = '~> 8.3.9.0'
+end
+
+ib = AssMaintainer::InfoBase.new('ib_name', 'File="path"')
+ib.platform_require #=> "~> 8.3.9.0"
+```
+
 For more examples see [examples](./test/ass_maintainer/examples_test.rb)
 
 ## Test
