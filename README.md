@@ -25,7 +25,7 @@ as a cluster administrator.
 Structure 1C:Enterprise application server is complex and confusing.
 For more info about 1C:Enterprise server look 1C documentation.
 
-Any examples for restrictions look in
+Some examples for restrictions look in
 [example](./test/ass_maintainer/examples_test.rb) defined as `Restrictions for`
 spec
 
@@ -80,17 +80,19 @@ Version defined in constant `PLATFORM_REQUIRE` from [test_helper.rb](./test/test
 
 For execute server infobase tests defined in
 [examples](./test/ass_maintainer/examples_test.rb) require:
-- have running 1C:Enterprise server. Version defined in `PLATFORM_REQUIRE`
-- have running data base(DBMS) server suitable for 1C:Enterprise.
+- running 1C:Enterprise application server. Version defined in `PLATFORM_REQUIRE`
+- running data base(DBMS) server suitable for 1C:Enterprise.
 
-On default server infobase tests skipped. For execute server infobase tests
-require pass server parameters in `ENV[ESRV_ENV]` like this:
+On default, server infobase tests skipped. For execute server infobase tests
+require to pass server parameters in `ENV[ESRV_ENV]` like this:
 ```
 $export ESRV_ENV="--ragent user:pass@host:port \
   --rmngr user:pass@host:port \
   --dbms MSSQLServer \
   --dbsrv user:pass@localhost\\sqlexpress"
 ```
+
+Running tests:
 
     $export SIMPLECOV=YES && rake test
 
