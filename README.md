@@ -12,7 +12,7 @@ In this gem defined two types of 1C application instance:
 
 Class `AssMaintainer::InfoBase` implements both types of applications but using
 difference mixins for each of them in constructor. Type of application,
-detects per type of connect string.
+detects per type of [connection string](https://github.com/leoniv/ass_launcher/blob/master/lib/ass_launcher/support/connection_string.rb).
 
 ## Restriction
 
