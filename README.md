@@ -1,3 +1,4 @@
+[![Gem Version](https://badge.fury.io/rb/ass_maintainer-info_base.svg)](https://badge.fury.io/rb/ass_maintainer-info_base)
 # AssMaintainer::InfoBase
 
 Gem for juggle with the [1C:Enterprise](http://1c.ru) application instances
